@@ -2,11 +2,11 @@
 {
     public class LogModel
     {
-        public DateTime Timestamp { get; set; }
-        public string? BackupName { get; set; }
-        public string? SourceFile { get; set; }
-        public string? DestinationFile { get; set; }
+        public DateTime Time { get; set; }
+        public string? Name { get; set; }
+        public string? FileSource { get; set; }
+        public string? FileDestination { get; set; }
         public long FileSize { get; set; }
-        public long TransferTime { get; set; }  
+        public long FileTransferTime { get; set; }
     }
 }
