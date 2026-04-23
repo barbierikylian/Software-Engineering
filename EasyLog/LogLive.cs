@@ -1,30 +1,33 @@
 ﻿using System;
+using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace EasyLog
 {
-    public class LogDaily : ILogStrategy
+    public class LogLive : ILogStrategy
     {
-        private readonly string _logDirectory;
+        private readonly string _filePath;
 
-        public LogDaily(string path)
+        public LogLive(string filePath)
         {
-            _logDirectory = path;
-            Directory.CreateDirectory(_logDirectory);
+            _filePath = filePath;
+
+            string? directory = Path.GetDirectoryName(_filePath);
+            if (!string.IsNullOrEmpty(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
         }
+
         public void WriteLog(LogModel logModel)
         {
-            string name = DateTime.Now.ToString("yyyy-MM-dd") + ".json";
-            string path = Path.Combine(_logDirectory, name);
-
             JsonSerializerOptions options = new JsonSerializerOptions();
             options.WriteIndented = true;
             options.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
 
             string text = JsonSerializer.Serialize(logModel, options);
-
-            File.AppendAllText(path, text + "\n");
+            File.WriteAllText(_filePath, text);
         }
     }
 }
