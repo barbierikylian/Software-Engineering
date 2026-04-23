@@ -5,21 +5,21 @@ namespace EasyLog
     public class LogModel
     {
         // For Both
-        public string? Name { get; set; }
-        public string? FileSource { get; set; }
-        public string? FileDestination { get; set; }
+        public string? name { get; set; }
+        public string? fileSource { get; set; }
+        public string? fileDestination { get; set; }
 
         // For Daily
-        public DateTime Time { get; set; }
-        public long FileSize { get; set; }
-        public double FileTransferTime { get; set; }
+        public DateTime time { get; set; }
+        public long fileSize { get; set; }
+        public double fileTransferTime { get; set; }
 
 
         // For Live
-        public string State { get; set; }
-        public int? TotalFilesToCopy { get; set; }
-        public long? TotalFilesSize { get; set; }
-        public int? NbFilesLeftToDo { get; set; }
-        public int? Progression { get; set; }
+        public string state { get; set; }
+        public int? totalFilesToCopy { get; set; }
+        public long? totalFilesSize { get; set; }
+        public int? nbFilesLeftToDo { get; set; }
+        public int? progression { get; set; }
     }
 }
