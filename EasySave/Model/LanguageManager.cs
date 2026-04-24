@@ -12,17 +12,24 @@ namespace EasySave.Model
 
         public void LoadLanguage(string language)
         {
+            string filePath = Path.Combine(AppContext.BaseDirectory, "Languages", language + ".json");
+            if (!File.Exists(filePath))
+            {
+                throw new FileNotFoundException("Language file not found");
+            }
+
             currentLanguage = language;
-
-            string filePath = "Languages/" + language + ".json";
             string jsonContent = File.ReadAllText(filePath);
-
-            translations = JsonSerializer.Deserialize<Dictionary<string, string>>(jsonContent);
+            translations = JsonSerializer.Deserialize<Dictionary<string, string>>(jsonContent) ?? new();
         }
 
         public string GetString(string key)
         {
-            return translations[key];
+            if (translations.ContainsKey(key))
+            {
+                return translations[key];
+            }
+            return "[" + key + "]";
         }
 
         public string GetCurrentLanguage()

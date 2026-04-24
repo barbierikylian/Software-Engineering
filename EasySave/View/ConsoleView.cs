@@ -39,25 +39,32 @@ namespace EasySave.View
                 string choice = Console.ReadLine();
                 Console.WriteLine();
 
-                switch (choice)
+                try
                 {
-                    case "1": MenuCreateJob(); break;
-                    case "2": MenuExecuteJob(); break;
-                    case "3": MenuListJobs(); break;
-                    case "4": MenuDeleteJob(); break;
-                    case "5": MenuChangeLanguage(); break;
-                    case "6":
-                        Console.WriteLine(langVM.GetString("goodbye"));
-                        isRunning = false;
-                        break;
-                    default:
-                        Console.WriteLine("Option invalide.");
-                        break;
+                    switch (choice)
+                    {
+                        case "1": MenuCreateJob(); break;
+                        case "2": MenuExecuteJob(); break;
+                        case "3": MenuListJobs(); break;
+                        case "4": MenuDeleteJob(); break;
+                        case "5": MenuChangeLanguage(); break;
+                        case "6":
+                            Console.WriteLine(langVM.GetString("goodbye"));
+                            isRunning = false;
+                            break;
+                        default:
+                            Console.WriteLine(langVM.GetString("error_invalid_option"));
+                            break;
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    Console.WriteLine("\n" + langVM.GetString("action_cancelled"));
                 }
 
                 if (isRunning)
                 {
-                    Console.WriteLine("\nAppuyez sur Entrée pour continuer...");
+                    Console.WriteLine("\n" + langVM.GetString("press_enter"));
                     Console.ReadLine();
                 }
             }
@@ -65,38 +72,40 @@ namespace EasySave.View
 
         private void MenuCreateJob()
         {
-            Console.WriteLine("=== Création d'un nouveau job ===");
+            Console.WriteLine("=== " + langVM.GetString("create_title") + " ===");
+            Console.WriteLine("(" + langVM.GetString("exit_hint") + ")");
 
             if (!saveVM.CanCreateNewJob())
             {
-                Console.WriteLine("Erreur : maximum 5 jobs atteint !");
+                Console.WriteLine(langVM.GetString("error_max_jobs"));
                 return;
             }
 
-            Console.Write("Nom du job : ");
-            string nom = Console.ReadLine();
+            Console.Write(langVM.GetString("label_name") + " : ");
+            string nom = ReadInputOrCancel();
 
-            Console.Write("Chemin source : ");
-            string source = Console.ReadLine();
+            Console.Write(langVM.GetString("label_source") + " : ");
+            string source = ReadInputOrCancel();
 
-            Console.Write("Chemin destination : ");
-            string destination = Console.ReadLine();
+            Console.Write(langVM.GetString("label_dest") + " : ");
+            string destination = ReadInputOrCancel();
 
-            Console.Write("Type (Full ou Differential) : ");
-            string type = Console.ReadLine();
+            Console.Write(langVM.GetString("label_type") + " : ");
+            string type = ReadInputOrCancel();
 
             saveVM.CreateJob(nom, source, destination, type);
-            Console.WriteLine($"Job '{nom}' créé avec succès !");
+            Console.WriteLine(langVM.GetString("success_create").Replace("{nom}", nom));
         }
 
         private void MenuExecuteJob()
         {
-            Console.WriteLine("=== Exécution d'un Job ===");
+            Console.WriteLine("=== " + langVM.GetString("execute_title") + " ===");
+            Console.WriteLine("(" + langVM.GetString("exit_hint") + ")");
 
             List<Backup> jobs = saveVM.GetAllJobs();
             if (jobs.Count == 0)
             {
-                Console.WriteLine("Aucun job n'est actuellement configuré.");
+                Console.WriteLine(langVM.GetString("error_no_jobs"));
                 return;
             }
 
@@ -105,37 +114,37 @@ namespace EasySave.View
                 Console.WriteLine($"[{i + 1}] {jobs[i].Name} [{jobs[i].Type}]");
             }
 
-            Console.Write("\nEntrez le numéro du job à exécuter (ou appuyez sur Entrée pour tout lancer) : ");
-            string input = Console.ReadLine();
+            Console.Write("\n" + langVM.GetString("prompt_execute") + " ");
+            string input = ReadInputOrCancel();
 
             if (string.IsNullOrWhiteSpace(input))
             {
-                Console.WriteLine("Exécution de tous les jobs en cours...");
+                Console.WriteLine(langVM.GetString("executing_all"));
                 saveVM.PerformJobs("");
             }
             else if (int.TryParse(input, out int index) && index > 0 && index <= jobs.Count)
             {
                 string jobName = jobs[index - 1].Name;
-                Console.WriteLine($"Exécution du job '{jobName}' en cours...");
+                Console.WriteLine(langVM.GetString("executing_single").Replace("{name}", jobName));
                 saveVM.PerformJobs(jobName);
             }
             else
             {
-                Console.WriteLine("Saisie invalide. Annulation de l'exécution.");
+                Console.WriteLine(langVM.GetString("error_invalid_input"));
             }
 
-            Console.WriteLine("Exécution terminée !");
+            Console.WriteLine(langVM.GetString("execution_finished"));
         }
 
         private void MenuListJobs()
         {
-            Console.WriteLine("=== Liste des Jobs configurés ===");
+            Console.WriteLine("=== " + langVM.GetString("list_title") + " ===");
 
             List<Backup> jobs = saveVM.GetAllJobs();
 
             if (jobs.Count == 0)
             {
-                Console.WriteLine("Aucun job n'est actuellement configuré.");
+                Console.WriteLine(langVM.GetString("error_no_jobs"));
                 return;
             }
 
@@ -147,12 +156,13 @@ namespace EasySave.View
 
         private void MenuDeleteJob()
         {
-            Console.WriteLine("=== Suppression d'un Job ===");
+            Console.WriteLine("=== " + langVM.GetString("delete_title") + " ===");
+            Console.WriteLine("(" + langVM.GetString("exit_hint") + ")");
 
             List<Backup> jobs = saveVM.GetAllJobs();
             if (jobs.Count == 0)
             {
-                Console.WriteLine("Aucun job n'est actuellement configuré.");
+                Console.WriteLine(langVM.GetString("error_no_jobs"));
                 return;
             }
 
@@ -161,29 +171,55 @@ namespace EasySave.View
                 Console.WriteLine($"[{i + 1}] {jobs[i].Name}");
             }
 
-            Console.Write("\nEntrez le numéro du job à supprimer : ");
-            string input = Console.ReadLine();
+            Console.Write("\n" + langVM.GetString("prompt_delete") + " ");
+            string input = ReadInputOrCancel();
 
             if (int.TryParse(input, out int index) && index > 0 && index <= jobs.Count)
             {
                 string nomASupprimer = jobs[index - 1].Name;
                 saveVM.DeleteJob(nomASupprimer);
-                Console.WriteLine($"Le job '{nomASupprimer}' a été supprimé.");
+                Console.WriteLine(langVM.GetString("success_delete").Replace("{nom}", nomASupprimer));
             }
             else
             {
-                Console.WriteLine("Numéro invalide. Aucune suppression effectuée.");
+                Console.WriteLine(langVM.GetString("error_invalid_input"));
             }
         }
 
         private void MenuChangeLanguage()
         {
-            Console.WriteLine("=== Changement de langue ===");
-            Console.Write("Choisissez la langue (fr/en) : ");
-            string lang = Console.ReadLine();
+            try
+            {
+                Console.WriteLine("=== " + langVM.GetString("lang_title") + " ===");
+                Console.WriteLine("(" + langVM.GetString("exit_hint") + ")");
+                Console.Write(langVM.GetString("prompt_lang") + " ");
 
-            langVM.UpdateLanguage(lang);
-            Console.WriteLine("Langue mise à jour !");
+                string lang = ReadInputOrCancel();
+
+                langVM.UpdateLanguage(lang);
+
+                Console.WriteLine(langVM.GetString("success_lang"));
+            }
+            catch (FileNotFoundException)
+            {
+                Console.WriteLine("\n[!] " + langVM.GetString("error_invalid_input") + " (en/fr only)");
+            }
+            catch (OperationCanceledException)
+            {
+                Console.WriteLine("\n" + langVM.GetString("action_cancelled"));
+            }
+        }
+
+        private string ReadInputOrCancel()
+        {
+            string input = Console.ReadLine();
+
+            if (input?.ToLower() == "exit")
+            {
+                throw new OperationCanceledException();
+            }
+
+            return input;
         }
     }
 }
