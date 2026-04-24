@@ -1,4 +1,12 @@
 <Solution>
+  <Folder Name="/docs/">
+    <File Path="RELEASE_NOTES.md" />
+    <File Path="SUPPORT.md" />
+    <File Path="USER_MANUAL.md" />
+  </Folder>
+  <Folder Name="/Éléments de solution/">
+    <File Path="README.md" />
+  </Folder>
   <Project Path="EasyLog/EasyLog.csproj" Id="48c29db3-3051-4256-9b05-6b4ab09e5f48" />
   <Project Path="EasySave/EasySave.csproj" />
 </Solution>
