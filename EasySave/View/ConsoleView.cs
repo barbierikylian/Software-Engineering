@@ -14,9 +14,9 @@ namespace EasySave.View
 
         public void Display()
         {
-            Console.WriteLine("");
+            Console.WriteLine("===================================");
             Console.WriteLine(langVM.GetString("welcome"));
-            Console.WriteLine("");
+            Console.WriteLine("===================================");
             Console.WriteLine();
             Console.WriteLine("1. " + langVM.GetString("menu_create"));
             Console.WriteLine("2. " + langVM.GetString("menu_execute"));
@@ -42,6 +42,11 @@ namespace EasySave.View
         public void Exit()
         {
             Console.WriteLine(langVM.GetString("goodbye"));
+        }
+
+        public void ChangeLanguage(string language)
+        {
+            langVM.UpdateLanguage(language);
         }
     }
 }

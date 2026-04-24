@@ -19,7 +19,14 @@ namespace EasySave.ViewModel
 
         public void SwitchLanguage()
         {
-            // Basculer entre français et anglais
+            if (languageManager.GetCurrentLanguage() == "fr")
+            {
+                languageManager.LoadLanguage("en");
+            }
+            else
+            {
+                languageManager.LoadLanguage("fr");
+            }
         }
 
         public string GetString(string key)
