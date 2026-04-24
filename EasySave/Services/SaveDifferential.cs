@@ -8,7 +8,10 @@ namespace EasySave.Services
 {
     public class SaveDifferential : ISaveStrategy
     {
-        public void Save(Backup job)
+        private int _filesCopied = 0;
+        private long _bytesCopied = 0;
+
+        public void Save(Backup job, LogModel state, ILogStrategy liveLogger)
         {
             try
             {
@@ -17,31 +20,32 @@ namespace EasySave.Services
 
                 if (!Directory.Exists(source)) return;
 
-                Console.WriteLine($"differential save : {job.Name}");
+                _filesCopied = 0;
+                _bytesCopied = 0;
 
                 Stopwatch timer = Stopwatch.StartNew();
 
-                long totalSize = CopyDirectoryRecursive(source, target);
+                CopyDirectoryRecursive(source, target, state, liveLogger);
 
                 timer.Stop();
-
-                Console.WriteLine($"save {job.Name} finish in {timer.Elapsed.TotalMilliseconds} ms.");
 
                 LogModel dailyLog = new LogModel
                 {
                     name = job.Name,
                     fileSource = source,
                     fileDestination = target,
-                    fileSize = totalSize,
+                    fileSize = _bytesCopied,
                     fileTransferTime = timer.Elapsed.TotalMilliseconds,
                     time = DateTime.Now
                 };
 
                 string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-                string logDirectory = Path.Combine(appData, "EasySave", "logs");
+                string logDir = Path.Combine(appData, "EasySave", "logs");
 
-                ILogStrategy logger = new LogDaily(logDirectory);
-                logger.WriteLog(dailyLog);
+                ILogStrategy dailyLogger = new LogDaily(logDir);
+                dailyLogger.WriteLog(dailyLog);
+
+                Console.WriteLine($"\nSave {job.Name} finished in {timer.Elapsed.TotalMilliseconds} ms.");
             }
             catch (Exception ex)
             {
@@ -49,45 +53,41 @@ namespace EasySave.Services
             }
         }
 
-        private long CopyDirectoryRecursive(string currentSource, string currentTarget)
+        private void CopyDirectoryRecursive(string src, string trg, LogModel state, ILogStrategy logger)
         {
-            long directorySize = 0;
+            if (!Directory.Exists(trg)) Directory.CreateDirectory(trg);
 
-            if (!Directory.Exists(currentTarget)) Directory.CreateDirectory(currentTarget);
-
-            foreach (string filePath in Directory.GetFiles(currentSource))
+            foreach (string filePath in Directory.GetFiles(src))
             {
-                string fileName = Path.GetFileName(filePath);
-                string destPath = Path.Combine(currentTarget, fileName);
+                string destPath = Path.Combine(trg, Path.GetFileName(filePath));
 
                 if (ShouldCopy(filePath, destPath))
                 {
-                    FileInfo fileInfo = new FileInfo(filePath);
-                    directorySize += fileInfo.Length;
-
+                    long fileSize = new FileInfo(filePath).Length;
                     SaveServices.CopyFile(filePath, destPath);
+
+                    _filesCopied++;
+                    _bytesCopied += fileSize;
+
+                    state.nbFilesLeftToDo = state.totalFilesToCopy - _filesCopied;
+                    if (state.totalFilesSize > 0)
+                        state.progression = (int)((_bytesCopied * 100) / state.totalFilesSize);
+
+                    logger.WriteLog(state);
+                    Console.Write($"\rProgress: {state.progression}% | Files left: {state.nbFilesLeftToDo}    ");
                 }
             }
 
-            foreach (string directoryPath in Directory.GetDirectories(currentSource))
+            foreach (string dirPath in Directory.GetDirectories(src))
             {
-                string folderName = Path.GetFileName(directoryPath);
-                string nextTarget = Path.Combine(currentTarget, folderName);
-
-                directorySize += CopyDirectoryRecursive(directoryPath, nextTarget);
+                CopyDirectoryRecursive(dirPath, Path.Combine(trg, Path.GetFileName(dirPath)), state, logger);
             }
-
-            return directorySize;
         }
 
         private bool ShouldCopy(string sourceFile, string destFile)
         {
             if (!File.Exists(destFile)) return true;
-
-            DateTime sourceTime = File.GetLastWriteTime(sourceFile);
-            DateTime destTime = File.GetLastWriteTime(destFile);
-
-            return sourceTime > destTime;
+            return File.GetLastWriteTime(sourceFile) > File.GetLastWriteTime(destFile);
         }
     }
 }

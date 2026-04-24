@@ -46,7 +46,7 @@ namespace EasySave.Service
                 ? new SaveDifferential()
                 : new SaveComplete();
 
-            strategy.Save(job);
+            strategy.Save(job, liveState, liveLogger);
 
             liveState.state = "END";
             liveState.progression = 100;
