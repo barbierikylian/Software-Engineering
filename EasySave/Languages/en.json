@@ -1,0 +1,19 @@
+{
+  "welcome": "Welcome to EasySave",
+  "menu_create": "Create a backup job",
+  "menu_execute": "Execute a job",
+  "menu_list": "List jobs",
+  "menu_delete": "Delete a job",
+  "menu_language": "Change language",
+  "menu_exit": "Quit",
+  "choose_option": "Choose an option: ",
+  "job_name": "Job name: ",
+  "source_path": "Source path: ",
+  "destination_path": "Destination path: ",
+  "backup_type": "Type (1=Full, 2=Differential): ",
+  "job_created": "Job created successfully",
+  "job_executed": "Job executed successfully",
+  "error_max_jobs": "Error: 5 jobs maximum reached",
+  "error_invalid": "Invalid input",
+  "goodbye": "Goodbye"
+}
