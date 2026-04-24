@@ -1,6 +1,6 @@
-![C#](https://img.shields.io/badge/c%23-%23239120.svg?style=for-the-badge&logo=c-sharp&logoColor=white)
+![.Net](https://img.shields.io/badge/.NET-5C2D91?style=for-the-badge&logo=.net&logoColor=white) 
 
-# EasySave V1
+# EasySave V1 💾
 
 Simple and efficient console backup tool. This is the **V1** release for Deliverable 1.
 
@@ -21,9 +21,6 @@ You can bypass the main menu by passing arguments directly to the executable:
 
 **Execute Jobs (by index)**
 - Run jobs 1 and 3: `EasySave.exe 1;3`
-
-**List Jobs**
-- Show all configured jobs: `EasySave.exe list`
 
 ## Important File Locations
 
