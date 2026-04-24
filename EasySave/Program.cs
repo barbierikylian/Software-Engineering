@@ -1,4 +1,4 @@
-﻿using EasySave.Model;
+using EasySave.Model;
 using EasySave.Services;
 
 class Program
