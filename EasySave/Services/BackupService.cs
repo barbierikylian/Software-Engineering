@@ -38,6 +38,7 @@ namespace EasySave.Service
                 totalFilesToCopy = stats.count,
                 totalFilesSize = stats.size,
                 nbFilesLeftToDo = stats.count,
+                sizeFileRemaining = stats.size,
                 progression = 0
             };
 

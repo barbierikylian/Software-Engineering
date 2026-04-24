@@ -68,6 +68,7 @@ namespace EasySave.Services
                 _bytesCopied += fileSize;
 
                 state.nbFilesLeftToDo = state.totalFilesToCopy - _filesCopied;
+                state.sizeFileRemaining = state.totalFilesSize - _bytesCopied;
                 if (state.totalFilesSize > 0)
                     state.progression = (int)((_bytesCopied * 100) / state.totalFilesSize);
 
