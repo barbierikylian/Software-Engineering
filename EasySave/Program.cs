@@ -1,25 +1,15 @@
-﻿using EasySave.Model;
+﻿using EasySave.View;
 
-Console.WriteLine("=== Test du LanguageManager ===");
+Console.WriteLine("=== Test de ConsoleView ===");
 Console.WriteLine();
 
-LanguageManager lang = new LanguageManager();
+ConsoleView view = new ConsoleView();
+view.Display();
 
-// Test en anglais
-lang.LoadLanguage("en");
-Console.WriteLine("Langue : Anglais");
-Console.WriteLine(lang.GetString("welcome"));
-Console.WriteLine(lang.GetString("menu_exit"));
-Console.WriteLine(lang.GetString("goodbye"));
+string choix = view.UserInput();
 Console.WriteLine();
+Console.WriteLine("Tu as choisi : " + choix);
 
-// Test en français
-lang.LoadLanguage("fr");
-Console.WriteLine("Langue : Francais");
-Console.WriteLine(lang.GetString("welcome"));
-Console.WriteLine(lang.GetString("menu_exit"));
-Console.WriteLine(lang.GetString("goodbye"));
 Console.WriteLine();
-
 Console.WriteLine("Appuyez sur une touche pour fermer...");
 Console.ReadKey();
