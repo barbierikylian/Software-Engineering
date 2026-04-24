@@ -1,6 +1,7 @@
 ﻿using EasyLog;
 using EasySave.Model;
 using EasySave.Services;
+using System.Diagnostics;
 using System.Text.Json;
 
 namespace EasySave.Service
@@ -25,12 +26,12 @@ namespace EasySave.Service
         public void PerformJobs(Backup job)
         {
             ILogStrategy liveLogger = new LogLive(StateFilePath);
-
             var stats = GetStats(job);
 
             LogModel liveState = new LogModel
             {
                 name = job.Name,
+                time = DateTime.Now,
                 fileSource = job.FileSource,
                 fileDestination = job.FileDestination,
                 state = "ACTIVE",
@@ -46,11 +47,17 @@ namespace EasySave.Service
                 ? new SaveDifferential()
                 : new SaveComplete();
 
-            strategy.Save(job);
+            Stopwatch timer = Stopwatch.StartNew();
+
+            strategy.Save(job, liveState, liveLogger);
+
+            timer.Stop();
 
             liveState.state = "END";
             liveState.progression = 100;
             liveState.nbFilesLeftToDo = 0;
+            liveState.executionTime = timer.ElapsedMilliseconds;
+
             liveLogger.WriteLog(liveState);
         }
 
