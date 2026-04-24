@@ -31,6 +31,16 @@ Launch the application:
 
 The main menu lets you create, execute, list and delete backup jobs, and change the language.
 
+## Development Setup
+
+When opening the solution in **Visual Studio** for the first time, you need to set `EasySave` as the startup project (otherwise pressing **F5** may not launch the application, as the solution also contains a DLL project).
+
+1. In the **Solution Explorer**, right-click on the **`EasySave`** project.
+2. Click on **"Set as Startup Project"** (the project name will then appear in **bold**).
+3. Press **F5** to build and run the application.
+
+If `EasySave` is already displayed in bold, it is already configured correctly.
+
 ## Project Structure
 
     Software-Engineering/
