@@ -1,14 +1,47 @@
 ﻿using EasySave.View;
 
-Console.WriteLine("=== Test de ConsoleView ===");
-Console.WriteLine();
-
 ConsoleView view = new ConsoleView();
-view.Display();
+bool continuer = true;
 
-string choix = view.UserInput();
-Console.WriteLine();
-Console.WriteLine("Tu as choisi : " + choix);
+while (continuer)
+{
+    view.Reset();
+    view.Display();
+    string choix = view.UserInput();
+
+    if (choix == "5")
+    {
+        // Changement de langue
+        Console.WriteLine();
+        Console.WriteLine("1. Français");
+        Console.WriteLine("2. English");
+        Console.Write("> ");
+        string langueChoix = view.UserInput();
+
+        if (langueChoix == "1")
+        {
+            view.ChangeLanguage("fr");
+        }
+        else if (langueChoix == "2")
+        {
+            view.ChangeLanguage("en");
+        }
+    }
+    else if (choix == "6")
+    {
+        // Quitter
+        view.Exit();
+        continuer = false;
+    }
+    else
+    {
+        // Option pas encore implémentée
+        Console.WriteLine();
+        Console.WriteLine("Option " + choix + " pas encore disponible.");
+        Console.WriteLine("Appuyez sur une touche...");
+        Console.ReadKey();
+    }
+}
 
 Console.WriteLine();
 Console.WriteLine("Appuyez sur une touche pour fermer...");
