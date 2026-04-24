@@ -61,7 +61,8 @@ namespace EasySave.Services
             {
                 string destPath = Path.Combine(trg, Path.GetFileName(filePath));
                 long fileSize = new FileInfo(filePath).Length;
-
+                state.currentSourceFile = filePath;
+                state.currentDestinationFile = destPath;
                 SaveServices.CopyFile(filePath, destPath);
 
                 _filesCopied++;
@@ -69,6 +70,7 @@ namespace EasySave.Services
 
                 state.nbFilesLeftToDo = state.totalFilesToCopy - _filesCopied;
                 state.sizeFileRemaining = state.totalFilesSize - _bytesCopied;
+
                 if (state.totalFilesSize > 0)
                     state.progression = (int)((_bytesCopied * 100) / state.totalFilesSize);
 

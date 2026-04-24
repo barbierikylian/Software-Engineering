@@ -22,5 +22,7 @@ namespace EasyLog
         public int? nbFilesLeftToDo { get; set; }
         public long? sizeFileRemaining { get; set; }
         public int? progression { get; set; }
+        public string? currentSourceFile { get; set; }
+        public string? currentDestinationFile { get; set; }
     }
 }

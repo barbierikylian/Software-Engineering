@@ -45,7 +45,8 @@ namespace EasySave.Services
                 ILogStrategy dailyLogger = new LogDaily(logDir);
                 dailyLogger.WriteLog(dailyLog);
 
-                Console.WriteLine($"\nSave {job.Name} finished in {timer.Elapsed.TotalMilliseconds} ms.");
+                Console.WriteLine();
+                Console.WriteLine($"Save {job.Name} finished in {timer.Elapsed.TotalMilliseconds} ms.");
             }
             catch (Exception ex)
             {
@@ -64,6 +65,10 @@ namespace EasySave.Services
                 if (ShouldCopy(filePath, destPath))
                 {
                     long fileSize = new FileInfo(filePath).Length;
+
+                    state.currentSourceFile = filePath;
+                    state.currentDestinationFile = destPath;
+
                     SaveServices.CopyFile(filePath, destPath);
 
                     _filesCopied++;
@@ -71,10 +76,12 @@ namespace EasySave.Services
 
                     state.nbFilesLeftToDo = state.totalFilesToCopy - _filesCopied;
                     state.sizeFileRemaining = state.totalFilesSize - _bytesCopied;
+
                     if (state.totalFilesSize > 0)
                         state.progression = (int)((_bytesCopied * 100) / state.totalFilesSize);
 
                     logger.WriteLog(state);
+
                     Console.Write($"\rProgress: {state.progression}% | Files left: {state.nbFilesLeftToDo}    ");
                 }
             }

@@ -39,7 +39,9 @@ namespace EasySave.Service
                 totalFilesSize = stats.size,
                 nbFilesLeftToDo = stats.count,
                 sizeFileRemaining = stats.size,
-                progression = 0
+                progression = 0,
+                currentSourceFile = "",
+                currentDestinationFile = ""
             };
 
             liveLogger.WriteLog(liveState);
@@ -58,6 +60,8 @@ namespace EasySave.Service
             liveState.progression = 100;
             liveState.nbFilesLeftToDo = 0;
             liveState.executionTime = timer.ElapsedMilliseconds;
+            liveState.currentSourceFile = null;
+            liveState.currentDestinationFile = null;
 
             liveLogger.WriteLog(liveState);
         }
@@ -73,7 +77,7 @@ namespace EasySave.Service
             {
                 string targetFile = Path.Combine(job.FileDestination, Path.GetRelativePath(job.FileSource, file));
 
-                if (job.Type.ToLower() == "full" || !File.Exists(targetFile) || File.GetLastWriteTime(file) > File.GetLastWriteTime(targetFile))
+                if (job.Type.ToLower() != "differential" || !File.Exists(targetFile) || File.GetLastWriteTime(file) > File.GetLastWriteTime(targetFile))
                 {
                     count++;
                     size += new FileInfo(file).Length;
