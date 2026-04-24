@@ -2,6 +2,7 @@
 
 namespace EasySave.ViewModel
 {
+    // MVVM bridge between the View and the LanguageManager.
     public class LanguageViewModel
     {
         private LanguageManager languageManager;

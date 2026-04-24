@@ -5,6 +5,7 @@ using System.Text.Json;
 
 namespace EasySave.Model
 {
+    // Loads a JSON translation file and returns translated strings by key.
     public class LanguageManager
     {
         private string currentLanguage = "en";
@@ -23,6 +24,7 @@ namespace EasySave.Model
             translations = JsonSerializer.Deserialize<Dictionary<string, string>>(jsonContent) ?? new();
         }
 
+        // Returns the translation for the key, or "[key]" if missing (helps spot gaps).
         public string GetString(string key)
         {
             if (translations.ContainsKey(key))

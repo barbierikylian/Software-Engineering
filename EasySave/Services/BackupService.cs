@@ -6,6 +6,7 @@ using System.Text.Json;
 
 namespace EasySave.Service
 {
+    // Core service: persists jobs to Listjobs.json and orchestrates their execution.
     public class BackupService
     {
         private const int MaxJobs = 5;
@@ -23,6 +24,7 @@ namespace EasySave.Service
             LoadJobs();
         }
 
+        // Executes a backup job: picks the strategy, runs it and writes live + daily logs.
         public void PerformJobs(Backup job)
         {
             ILogStrategy liveLogger = new LogLive(StateFilePath);
@@ -61,6 +63,7 @@ namespace EasySave.Service
             liveLogger.WriteLog(liveState);
         }
 
+        // Pre-counts how many files and bytes will actually be copied (respects the job type).
         private (int count, long size) GetStats(Backup job)
         {
             int count = 0;

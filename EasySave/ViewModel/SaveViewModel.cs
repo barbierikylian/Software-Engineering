@@ -5,6 +5,7 @@ using EasySave.Service;
 
 namespace EasySave.ViewModel
 {
+    // MVVM bridge between the View and the BackupService.
     public class SaveViewModel
     {
         private BackupService backupservice;
@@ -30,6 +31,7 @@ namespace EasySave.ViewModel
 
         public List<Backup> GetAllJobs() => backupservice.GetAllJobs();
 
+        // Runs a single job if 'sequence' matches a job name, or ALL jobs if 'sequence' is empty.
         public void PerformJobs(string sequence)
         {
             List<Backup> jobs = backupservice.GetAllJobs();

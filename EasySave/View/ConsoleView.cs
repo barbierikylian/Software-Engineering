@@ -5,6 +5,7 @@ using EasySave.ViewModel;
 
 namespace EasySave.View
 {
+    // Console UI: displays menus and dispatches user actions to the ViewModels.
     public class ConsoleView
     {
         private SaveViewModel saveVM;
@@ -16,6 +17,7 @@ namespace EasySave.View
             langVM = languageViewModel;
         }
 
+        // Main loop: shows the menu until the user picks "Quit".
         public void Display()
         {
             bool isRunning = true;
@@ -97,8 +99,6 @@ namespace EasySave.View
             Console.WriteLine(langVM.GetString("success_create").Replace("{nom}", nom));
         }
 
-        
-
         private void MenuListJobs()
         {
             Console.WriteLine("=== " + langVM.GetString("list_title") + " ===");
@@ -116,6 +116,8 @@ namespace EasySave.View
                 Console.WriteLine($"[{i + 1}] {jobs[i].Name} [{jobs[i].Type}] : {jobs[i].FileSource} -> {jobs[i].FileDestination}");
             }
         }
+
+        // Accepts empty (= all jobs), "1;3;4" style (= selection) or "exit" (= cancel).
         private void MenuExecuteJob()
         {
             Console.WriteLine("\n=== " + langVM.GetString("execute_title") + " ===");
@@ -239,6 +241,7 @@ namespace EasySave.View
             }
         }
 
+        // Throws OperationCanceledException if the user types "exit".
         private string ReadInputOrCancel()
         {
             string input = Console.ReadLine();

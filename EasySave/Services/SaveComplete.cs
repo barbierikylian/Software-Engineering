@@ -6,6 +6,7 @@ using EasyLog;
 
 namespace EasySave.Services
 {
+    // Full backup: copies every file, regardless of modification date.
     public class SaveComplete : ISaveStrategy
     {
         private int _filesCopied = 0;
@@ -29,6 +30,7 @@ namespace EasySave.Services
 
                 timer.Stop();
 
+                // Write one daily log entry per job (summary)
                 LogModel dailyLog = new LogModel
                 {
                     name = job.Name,
@@ -53,6 +55,7 @@ namespace EasySave.Services
             }
         }
 
+        // Recursively walks through src and copies every file into trg, updating the live state after each copy.
         private void CopyDirectoryRecursive(string src, string trg, LogModel state, ILogStrategy logger)
         {
             if (!Directory.Exists(trg)) Directory.CreateDirectory(trg);

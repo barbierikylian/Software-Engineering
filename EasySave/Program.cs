@@ -4,6 +4,7 @@ using EasySave.ViewModel;
 
 namespace EasySave
 {
+    // Application entry point: wires up the ViewModels + View and starts the UI loop.
     class Program
     {
         static void Main(string[] args)

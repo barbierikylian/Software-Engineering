@@ -1,5 +1,6 @@
 ﻿namespace EasySave.Model
 {
+    // Configuration of a backup job (name, source, destination, type).
     public class Backup
     {
         public string Name { get; set; } = string.Empty;

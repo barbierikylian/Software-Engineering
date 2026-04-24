@@ -6,6 +6,7 @@ using EasyLog;
 
 namespace EasySave.Services
 {
+    // Differential backup: copies only new or modified files.
     public class SaveDifferential : ISaveStrategy
     {
         private int _filesCopied = 0;
@@ -84,6 +85,7 @@ namespace EasySave.Services
             }
         }
 
+        // A file needs to be copied if it's missing at the destination or has been modified more recently.
         private bool ShouldCopy(string sourceFile, string destFile)
         {
             if (!File.Exists(destFile)) return true;
