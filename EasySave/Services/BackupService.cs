@@ -9,17 +9,10 @@ namespace EasySave.Service
     {
         private const int MaxJobs = 5;
 
-        private static readonly string AppDataFolder =
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-
-        private static readonly string ConfigDir =
-            Path.Combine(AppDataFolder, "EasySave", "data");
-
-        private static readonly string JobsFilePath =
-            Path.Combine(ConfigDir, "Listjobs.json");
-
-        private static readonly string StateFilePath =
-            Path.Combine(ConfigDir, "state.json");
+        private static readonly string AppDataFolder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+        private static readonly string ConfigDir = Path.Combine(AppDataFolder, "EasySave", "data");
+        private static readonly string JobsFilePath = Path.Combine(ConfigDir, "Listjobs.json");
+        private static readonly string StateFilePath = Path.Combine(ConfigDir, "state.json");
 
         public List<Backup> Jobs { get; private set; } = new();
 
@@ -28,38 +21,12 @@ namespace EasySave.Service
             Directory.CreateDirectory(ConfigDir);
             LoadJobs();
         }
-        public Backup CreateJob(Backup job)
-        {
-            if (!CanCreateJob())
-                throw new InvalidOperationException(
-                    $"Cannot create more than {MaxJobs} backup jobs.");
-
-            Jobs.Add(job);
-            SaveJobs();
-            return job;
-        }
-        public void DeleteJob(Backup job)
-        {
-            Jobs.Remove(job);
-            SaveJobs();
-        }
-
-        public List<Backup> UpdateList(Backup updatedJob)
-        {
-            int index = Jobs.FindIndex(j => j.Name == updatedJob.Name);
-            if (index >= 0)
-                Jobs[index] = updatedJob;
-
-            SaveJobs();
-            return Jobs;
-        }
-
-        public List<Backup> GetAllJobs() => new(Jobs);
 
         public void PerformJobs(Backup job)
         {
-            string stateFilePath = Path.Combine(AppContext.BaseDirectory, "logs", "state.json");
-            ILogStrategy liveLogger = new LogLive(stateFilePath);
+            ILogStrategy liveLogger = new LogLive(StateFilePath);
+
+            var stats = GetStats(job);
 
             LogModel liveState = new LogModel
             {
@@ -67,15 +34,15 @@ namespace EasySave.Service
                 fileSource = job.FileSource,
                 fileDestination = job.FileDestination,
                 state = "ACTIVE",
-                progression = 0,
-                totalFilesToCopy = 0,
-                totalFilesSize = 0,
-                nbFilesLeftToDo = 0
+                totalFilesToCopy = stats.count,
+                totalFilesSize = stats.size,
+                nbFilesLeftToDo = stats.count,
+                progression = 0
             };
 
             liveLogger.WriteLog(liveState);
 
-            ISaveStrategy strategy = job.Type.ToLowerInvariant() == "differential"
+            ISaveStrategy strategy = job.Type.ToLower() == "differential"
                 ? new SaveDifferential()
                 : new SaveComplete();
 
@@ -84,40 +51,62 @@ namespace EasySave.Service
             liveState.state = "END";
             liveState.progression = 100;
             liveState.nbFilesLeftToDo = 0;
-
             liveLogger.WriteLog(liveState);
         }
+
+        private (int count, long size) GetStats(Backup job)
+        {
+            int count = 0;
+            long size = 0;
+
+            if (!Directory.Exists(job.FileSource)) return (0, 0);
+
+            foreach (string file in Directory.GetFiles(job.FileSource, "*.*", SearchOption.AllDirectories))
+            {
+                string targetFile = Path.Combine(job.FileDestination, Path.GetRelativePath(job.FileSource, file));
+
+                if (job.Type.ToLower() == "full" || !File.Exists(targetFile) || File.GetLastWriteTime(file) > File.GetLastWriteTime(targetFile))
+                {
+                    count++;
+                    size += new FileInfo(file).Length;
+                }
+            }
+            return (count, size);
+        }
+
+        public Backup CreateJob(Backup job)
+        {
+            if (!CanCreateJob()) throw new InvalidOperationException("Max jobs reached.");
+            Jobs.Add(job);
+            SaveJobs();
+            return job;
+        }
+
+        public void DeleteJob(Backup job)
+        {
+            Jobs.Remove(job);
+            SaveJobs();
+        }
+
+        public List<Backup> GetAllJobs() => new(Jobs);
+
+        public bool CanCreateJob() => Jobs.Count < MaxJobs;
 
         public void SaveJobs()
         {
             var options = new JsonSerializerOptions { WriteIndented = true };
-            string json = JsonSerializer.Serialize(Jobs, options);
-            File.WriteAllText(JobsFilePath, json);
+            File.WriteAllText(JobsFilePath, JsonSerializer.Serialize(Jobs, options));
         }
-
-        public bool CanCreateJob() => Jobs.Count < MaxJobs;
 
         private void LoadJobs()
         {
-            if (!File.Exists(JobsFilePath))
-                return;
-
+            if (!File.Exists(JobsFilePath)) return;
             try
             {
                 string json = File.ReadAllText(JobsFilePath);
                 Jobs = JsonSerializer.Deserialize<List<Backup>>(json) ?? new();
             }
-            catch
-            {
-                Jobs = new List<Backup>();
-            }
-        }
-
-        private void UpdateStateFile()
-        {
-            var options = new JsonSerializerOptions { WriteIndented = true };
-            string json = JsonSerializer.Serialize(Jobs, options);
-            File.WriteAllText(StateFilePath, json);
+            catch { Jobs = new List<Backup>(); }
         }
     }
 }

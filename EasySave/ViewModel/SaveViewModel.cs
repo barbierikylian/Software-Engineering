@@ -14,43 +14,25 @@ namespace EasySave.ViewModel
             backupservice = new BackupService();
         }
 
-        public bool CanCreateNewJob()
-        {
-            return backupservice.CanCreateJob();
-        }
+        public bool CanCreateNewJob() => backupservice.CanCreateJob();
 
         public void CreateJob(string name, string source, string destination, string type)
         {
-            Backup job = new Backup();
-            job.Name = name;
-            job.FileSource = source;
-            job.FileDestination = destination;
-            job.Type = type;
-
+            Backup job = new Backup { Name = name, FileSource = source, FileDestination = destination, Type = type };
             backupservice.CreateJob(job);
         }
 
         public void DeleteJob(string jobName)
         {
             Backup jobToDelete = backupservice.GetAllJobs().Find(j => j.Name == jobName);
-
-            if (jobToDelete != null)
-            {
-                backupservice.DeleteJob(jobToDelete);
-            }
+            if (jobToDelete != null) backupservice.DeleteJob(jobToDelete);
         }
 
-        public List<Backup> GetAllJobs()
-        {
-            return backupservice.GetAllJobs();
-        }
+        public List<Backup> GetAllJobs() => backupservice.GetAllJobs();
 
         public void PerformJobs(string sequence)
         {
             List<Backup> jobs = backupservice.GetAllJobs();
-
-            if (jobs.Count == 0) return;
-
             Backup jobToRun = jobs.Find(j => j.Name == sequence);
 
             if (jobToRun != null)
@@ -59,10 +41,7 @@ namespace EasySave.ViewModel
             }
             else if (string.IsNullOrWhiteSpace(sequence))
             {
-                foreach (Backup job in jobs)
-                {
-                    backupservice.PerformJobs(job);
-                }
+                foreach (Backup job in jobs) backupservice.PerformJobs(job);
             }
         }
     }
