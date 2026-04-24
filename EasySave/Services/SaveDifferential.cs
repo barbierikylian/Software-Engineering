@@ -45,12 +45,20 @@ namespace EasySave.Services
                 ILogStrategy dailyLogger = new LogDaily(logDir);
                 dailyLogger.WriteLog(dailyLog);
 
+                Console.Title = "EasySave - Finished";
                 Console.WriteLine();
-                Console.WriteLine($"Save {job.Name} finished in {timer.Elapsed.TotalMilliseconds} ms.");
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine("--------------------------------------------------");
+                Console.WriteLine($" Job: {job.Name}");
+                Console.WriteLine($" Status: Success");
+                Console.WriteLine($" Files: {_filesCopied}");
+                Console.WriteLine($" Time: {timer.ElapsedMilliseconds} ms");
+                Console.WriteLine("--------------------------------------------------");
+                Console.ResetColor();
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"error : {ex.Message}");
+                Console.WriteLine($"Error : {ex.Message}");
             }
         }
 
@@ -64,6 +72,7 @@ namespace EasySave.Services
 
                 if (ShouldCopy(filePath, destPath))
                 {
+                    bool isNewFile = !File.Exists(destPath);
                     long fileSize = new FileInfo(filePath).Length;
 
                     state.currentSourceFile = filePath;
@@ -82,7 +91,23 @@ namespace EasySave.Services
 
                     logger.WriteLog(state);
 
-                    Console.Write($"\rProgress: {state.progression}% | Files left: {state.nbFilesLeftToDo}    ");
+                    Console.Title = $"[{state.progression}%] EasySave - Copying: {state.name}";
+
+                    string fileName = Path.GetFileName(filePath);
+                    if (isNewFile)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Green;
+                        Console.Write("[+] ");
+                        Console.ResetColor();
+                        Console.WriteLine($"Added   : {fileName} ({state.progression}%)");
+                    }
+                    else
+                    {
+                        Console.ForegroundColor = ConsoleColor.Cyan;
+                        Console.Write("[~] ");
+                        Console.ResetColor();
+                        Console.WriteLine($"Updated : {fileName} ({state.progression}%)");
+                    }
                 }
             }
 
