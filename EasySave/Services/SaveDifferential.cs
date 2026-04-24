@@ -1,6 +1,8 @@
 ﻿using System;
 using System.IO;
+using System.Diagnostics;
 using EasySave.Model;
+using EasyLog;
 
 namespace EasySave.Services
 {
@@ -8,7 +10,6 @@ namespace EasySave.Services
     {
         public void Save(Backup job)
         {
-
             try
             {
                 string source = SaveServices.ConvertToUNC(job.FileSource);
@@ -17,16 +18,42 @@ namespace EasySave.Services
                 if (!Directory.Exists(source)) return;
 
                 Console.WriteLine($"differential save : {job.Name}");
-                CopyDirectoryRecursive(source, target);
-                Console.WriteLine($"save {job.Name} finish.");
+
+                Stopwatch timer = Stopwatch.StartNew();
+
+                long totalSize = CopyDirectoryRecursive(source, target);
+
+                timer.Stop();
+
+                Console.WriteLine($"save {job.Name} finish in {timer.Elapsed.TotalMilliseconds} ms.");
+
+                LogModel dailyLog = new LogModel
+                {
+                    name = job.Name,
+                    fileSource = source,
+                    fileDestination = target,
+                    fileSize = totalSize,
+                    fileTransferTime = timer.Elapsed.TotalMilliseconds,
+                    time = DateTime.Now
+                };
+
+                string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+                string logDirectory = Path.Combine(appData, "EasySave", "logs");
+
+                ILogStrategy logger = new LogDaily(logDirectory);
+                logger.WriteLog(dailyLog);
             }
-            catch (Exception ex) { Console.WriteLine($"error : {ex.Message}"); }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"error : {ex.Message}");
+            }
         }
 
-        private void CopyDirectoryRecursive(string currentSource, string currentTarget)
+        private long CopyDirectoryRecursive(string currentSource, string currentTarget)
         {
-            if (!Directory.Exists(currentTarget)) Directory.CreateDirectory(currentTarget);
+            long directorySize = 0;
 
+            if (!Directory.Exists(currentTarget)) Directory.CreateDirectory(currentTarget);
 
             foreach (string filePath in Directory.GetFiles(currentSource))
             {
@@ -35,6 +62,9 @@ namespace EasySave.Services
 
                 if (ShouldCopy(filePath, destPath))
                 {
+                    FileInfo fileInfo = new FileInfo(filePath);
+                    directorySize += fileInfo.Length;
+
                     SaveServices.CopyFile(filePath, destPath);
                 }
             }
@@ -43,14 +73,15 @@ namespace EasySave.Services
             {
                 string folderName = Path.GetFileName(directoryPath);
                 string nextTarget = Path.Combine(currentTarget, folderName);
-                CopyDirectoryRecursive(directoryPath, nextTarget);
-            }
-        }
 
+                directorySize += CopyDirectoryRecursive(directoryPath, nextTarget);
+            }
+
+            return directorySize;
+        }
 
         private bool ShouldCopy(string sourceFile, string destFile)
         {
-
             if (!File.Exists(destFile)) return true;
 
             DateTime sourceTime = File.GetLastWriteTime(sourceFile);

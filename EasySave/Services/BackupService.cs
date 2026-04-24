@@ -1,6 +1,7 @@
-﻿using System.Text.Json;
+﻿using EasyLog;
 using EasySave.Model;
 using EasySave.Services;
+using System.Text.Json;
 
 namespace EasySave.Service
 {
@@ -8,11 +9,14 @@ namespace EasySave.Service
     {
         private const int MaxJobs = 5;
 
+        private static readonly string AppDataFolder =
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+
         private static readonly string ConfigDir =
-            Path.Combine(AppContext.BaseDirectory, "data");
+            Path.Combine(AppDataFolder, "EasySave", "data");
 
         private static readonly string JobsFilePath =
-            Path.Combine(ConfigDir, "jobs.json");
+            Path.Combine(ConfigDir, "Listjobs.json");
 
         private static readonly string StateFilePath =
             Path.Combine(ConfigDir, "state.json");
@@ -51,11 +55,25 @@ namespace EasySave.Service
         }
 
         public List<Backup> GetAllJobs() => new(Jobs);
+
         public void PerformJobs(Backup job)
         {
-            job.Timestamp = DateTime.Now;
-            job.BackupStatus.Progression = 0;
-            UpdateStateFile();
+            string stateFilePath = Path.Combine(AppContext.BaseDirectory, "logs", "state.json");
+            ILogStrategy liveLogger = new LogLive(stateFilePath);
+
+            LogModel liveState = new LogModel
+            {
+                name = job.Name,
+                fileSource = job.FileSource,
+                fileDestination = job.FileDestination,
+                state = "ACTIVE",
+                progression = 0,
+                totalFilesToCopy = 0,
+                totalFilesSize = 0,
+                nbFilesLeftToDo = 0
+            };
+
+            liveLogger.WriteLog(liveState);
 
             ISaveStrategy strategy = job.Type.ToLowerInvariant() == "differential"
                 ? new SaveDifferential()
@@ -63,9 +81,11 @@ namespace EasySave.Service
 
             strategy.Save(job);
 
-            job.BackupStatus.Progression = 100;
-            job.BackupStatus.FileRemaining = 0;
-            UpdateStateFile();
+            liveState.state = "END";
+            liveState.progression = 100;
+            liveState.nbFilesLeftToDo = 0;
+
+            liveLogger.WriteLog(liveState);
         }
 
         public void SaveJobs()
