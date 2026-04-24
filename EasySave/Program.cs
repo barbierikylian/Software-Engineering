@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using EasySave.Model;
 using EasySave.View;
 using EasySave.ViewModel;
 
@@ -15,7 +16,7 @@ namespace EasySave
 
             if (args.Length > 0)
             {
-                string inputUser = string.Join(" ", args); ;
+                string inputUser = string.Join("", args).Trim();
                 List<int> jobsToExecute = new List<int>();
 
                 try
@@ -30,7 +31,7 @@ namespace EasySave
                     else if (inputUser.Contains(";"))
                     {
                         string[] parts = inputUser.Split(';');
-                        foreach (var part in parts)
+                        foreach (string part in parts)
                         {
                             jobsToExecute.Add(int.Parse(part));
                         }
@@ -42,26 +43,26 @@ namespace EasySave
 
                     foreach (int jobNum in jobsToExecute)
                     {
-                        var allJobsList = saveViewModel.GetAllJobs();
+                        List<Backup> allJobsList = saveViewModel.GetAllJobs();
                         int index = jobNum - 1;
 
                         if (index >= 0 && index < allJobsList.Count)
                         {
-                            string nomReel = allJobsList[index].Name;
+                            string targetName = allJobsList[index].Name;
 
-                            Console.WriteLine($"\n[CLI] Lancement du travail : {nomReel}...");
+                            Console.WriteLine($"\n[CLI] Executing job: {targetName}...");
 
-                            saveViewModel.PerformJobs(nomReel);
+                            saveViewModel.PerformJobs(targetName);
                         }
                         else
                         {
-                            Console.WriteLine($"\n[Erreur] Aucun travail trouvé pour le n°{jobNum}.");
+                            Console.WriteLine($"\n[Error] No job found for #{jobNum}.");
                         }
                     }
                 }
                 catch (Exception)
                 {
-                    Console.WriteLine("Erreur : Format d'argument invalide. Utilisez '1-3' ou '1;3'.");
+                    Console.WriteLine("\n[Error] Invalid argument format. Use '1-3' or '1;3'.");
                 }
             }
             else

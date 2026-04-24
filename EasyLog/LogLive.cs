@@ -5,6 +5,7 @@ using System.Text.Json.Serialization;
 
 namespace EasyLog
 {
+    // Log strategy that OVERWRITES a single file (state.json) with the current job state.
     public class LogLive : ILogStrategy
     {
         private readonly string _filePath;

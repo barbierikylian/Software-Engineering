@@ -23,21 +23,19 @@ namespace EasySave.View
             while (isRunning)
             {
                 Console.Clear();
+                PrintHeader();
 
-                Console.WriteLine("===================================");
-                Console.WriteLine(langVM.GetString("welcome"));
-                Console.WriteLine("===================================");
-                Console.WriteLine("1. " + langVM.GetString("menu_create"));
-                Console.WriteLine("2. " + langVM.GetString("menu_execute"));
-                Console.WriteLine("3. " + langVM.GetString("menu_list"));
-                Console.WriteLine("4. " + langVM.GetString("menu_delete"));
-                Console.WriteLine("5. " + langVM.GetString("menu_language"));
-                Console.WriteLine("6. " + langVM.GetString("menu_exit"));
-                Console.WriteLine("===================================");
-                Console.Write(langVM.GetString("choose_option") + " ");
+                PrintMenuOption("1", langVM.GetString("menu_create"), ConsoleColor.Green);
+                PrintMenuOption("2", langVM.GetString("menu_execute"), ConsoleColor.Green);
+                PrintMenuOption("3", langVM.GetString("menu_list"), ConsoleColor.Green);
+                PrintMenuOption("4", langVM.GetString("menu_delete"), ConsoleColor.Green);
+                PrintMenuOption("5", langVM.GetString("menu_language"), ConsoleColor.Yellow);
+                PrintMenuOption("6", langVM.GetString("menu_exit"), ConsoleColor.Red);
+
+                Console.WriteLine("\n" + new string('─', 40));
+                Console.Write($" {langVM.GetString("choose_option")} ");
 
                 string choice = Console.ReadLine();
-                Console.WriteLine();
 
                 try
                 {
@@ -49,205 +47,232 @@ namespace EasySave.View
                         case "4": MenuDeleteJob(); break;
                         case "5": MenuChangeLanguage(); break;
                         case "6":
-                            Console.WriteLine(langVM.GetString("goodbye"));
+                            Console.WriteLine("\n " + langVM.GetString("goodbye"));
                             isRunning = false;
                             break;
                         default:
-                            Console.WriteLine(langVM.GetString("error_invalid_option"));
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine("\n [!] " + langVM.GetString("error_invalid_option"));
+                            Console.ResetColor();
                             break;
                     }
                 }
                 catch (OperationCanceledException)
                 {
-                    Console.WriteLine("\n" + langVM.GetString("action_cancelled"));
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.WriteLine("\n > " + langVM.GetString("action_cancelled"));
+                    Console.ResetColor();
                 }
 
                 if (isRunning)
                 {
-                    Console.WriteLine("\n" + langVM.GetString("press_enter"));
+                    Console.ForegroundColor = ConsoleColor.DarkGray;
+                    Console.WriteLine("\n " + langVM.GetString("press_enter"));
+                    Console.ResetColor();
                     Console.ReadLine();
                 }
             }
         }
 
+        private void PrintHeader()
+        {
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine(@"  ______                       _____                 ");
+            Console.WriteLine(@" |  ____|                     / ____|                ");
+            Console.WriteLine(@" | |__   __ _ ___ _   _      | (___   __ ___   _____ ");
+            Console.WriteLine(@" |  __| / _` / __| | | |      \___ \ / _` \ \ / / _ \");
+            Console.WriteLine(@" | |____\__,_|___/\__, |      ____) | (_| |\ V /  __/");
+            Console.WriteLine(@" |______\____|____/|___/     |_____/ \__,_| \_/ \___|");
+            Console.WriteLine(@"                   |___/                             ");
+            Console.WriteLine("\n " + langVM.GetString("welcome").ToUpper());
+            Console.WriteLine(new string('═', 55) + "\n");
+            Console.ResetColor();
+        }
+
+        private void PrintMenuOption(string key, string label, ConsoleColor color)
+        {
+            Console.ForegroundColor = color;
+            Console.Write($"  [{key}] ");
+            Console.ResetColor();
+            Console.WriteLine(label);
+        }
+
         private void MenuCreateJob()
         {
-            Console.WriteLine("=== " + langVM.GetString("create_title") + " ===");
-            Console.WriteLine("(" + langVM.GetString("exit_hint") + ")");
+            Console.Clear();
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine($"--- {langVM.GetString("create_title")} ---");
+            Console.ResetColor();
+            Console.ForegroundColor = ConsoleColor.DarkGray;
+            Console.WriteLine($" (Type 'exit' to cancel and return to menu)\n");
+            Console.ResetColor();
 
             if (!saveVM.CanCreateNewJob())
             {
+                Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine(langVM.GetString("error_max_jobs"));
+                Console.ResetColor();
                 return;
             }
 
-            Console.Write(langVM.GetString("label_name") + " : ");
-            string nom = ReadInputOrCancel();
+            Console.Write($" {langVM.GetString("label_name")} : ");
+            string name = ReadInputOrCancel();
 
-            Console.Write(langVM.GetString("label_source") + " : ");
+            Console.Write($" {langVM.GetString("label_source")} : ");
             string source = ReadInputOrCancel();
 
-            Console.Write(langVM.GetString("label_dest") + " : ");
+            Console.Write($" {langVM.GetString("label_dest")} : ");
             string destination = ReadInputOrCancel();
 
-            Console.Write(langVM.GetString("label_type") + " : ");
+            Console.Write($" {langVM.GetString("label_type")} : ");
             string type = ReadInputOrCancel();
 
-            saveVM.CreateJob(nom, source, destination, type);
-            Console.WriteLine(langVM.GetString("success_create").Replace("{nom}", nom));
+            saveVM.CreateJob(name, source, destination, type);
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("\n [OK] " + langVM.GetString("success_create").Replace("{name}", name));
+            Console.ResetColor();
         }
-
-        
 
         private void MenuListJobs()
         {
-            Console.WriteLine("=== " + langVM.GetString("list_title") + " ===");
+            Console.Clear();
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine($"--- {langVM.GetString("list_title")} ---\n");
+            Console.ResetColor();
 
             List<Backup> jobs = saveVM.GetAllJobs();
-
             if (jobs.Count == 0)
             {
-                Console.WriteLine(langVM.GetString("error_no_jobs"));
+                Console.WriteLine(" " + langVM.GetString("error_no_jobs"));
                 return;
             }
 
-            for (int i = 0; i < jobs.Count; i++)
+            foreach (Backup job in jobs)
             {
-                Console.WriteLine($"[{i + 1}] {jobs[i].Name} [{jobs[i].Type}] : {jobs[i].FileSource} -> {jobs[i].FileDestination}");
+                Console.ForegroundColor = ConsoleColor.DarkGray;
+                Console.Write(" • ");
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.Write($"{job.Name.PadRight(15)} ");
+                Console.ForegroundColor = ConsoleColor.DarkCyan;
+                Console.WriteLine($"[{job.Type}]");
+                Console.ForegroundColor = ConsoleColor.DarkGray;
+                Console.WriteLine($"   {job.FileSource} -> {job.FileDestination}\n");
             }
+            Console.ResetColor();
         }
+
         private void MenuExecuteJob()
         {
-            Console.WriteLine("\n=== " + langVM.GetString("execute_title") + " ===");
-            List<Backup> jobs = saveVM.GetAllJobs();
+            Console.Clear();
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine($"--- {langVM.GetString("execute_title")} ---\n");
+            Console.ResetColor();
 
-            if (jobs.Count == 0)
-            {
-                Console.WriteLine(langVM.GetString("error_no_jobs"));
-                return;
-            }
+            List<Backup> jobs = saveVM.GetAllJobs();
+            if (jobs.Count == 0) { Console.WriteLine(" " + langVM.GetString("error_no_jobs")); return; }
+
             for (int i = 0; i < jobs.Count; i++)
             {
-                Console.WriteLine($"[{i + 1}] {jobs[i].Name} ({jobs[i].FileSource} -> {jobs[i].FileDestination})");
+                Console.WriteLine($"  [{i + 1}] {jobs[i].Name}");
             }
 
-            Console.WriteLine("\n--- " + langVM.GetString("instructions_title") + " ---");
-            Console.WriteLine(langVM.GetString("hint_all") + " : [Entrée]");
-            Console.WriteLine(langVM.GetString("hint_multiple") + " : 1;3;4");
-            Console.WriteLine(langVM.GetString("exit_hint"));
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine($"\n  (!) {langVM.GetString("hint_multiple")} (ex: 1;3)");
+            Console.ForegroundColor = ConsoleColor.DarkGray;
+            Console.WriteLine($"  (Type 'exit' to cancel)");
+            Console.ResetColor();
 
-            Console.Write("\n" + langVM.GetString("prompt_execute") + " ");
+            Console.Write($"\n {langVM.GetString("prompt_execute")} ");
             string input = ReadInputOrCancel();
 
             if (string.IsNullOrWhiteSpace(input))
             {
-                Console.WriteLine(">>> " + langVM.GetString("executing_all"));
+                Console.WriteLine("\n >>> " + langVM.GetString("executing_all"));
                 saveVM.PerformJobs("");
-            }
-            else if (input.ToLower() == "q")
-            {
-                return;
             }
             else
             {
-                var parts = input.Split(new[] { ';', ',', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                string[] parts = input.Split(new[] { ';', ',', ' ' }, StringSplitOptions.RemoveEmptyEntries);
                 List<string> selectedJobs = new List<string>();
 
-                foreach (var part in parts)
+                foreach (string part in parts)
                 {
-                    if (int.TryParse(part, out int index) && index > 0 && index <= jobs.Count)
+                    int index;
+                    if (int.TryParse(part, out index) && index > 0 && index <= jobs.Count)
                     {
                         selectedJobs.Add(jobs[index - 1].Name);
-                    }
-                    else
-                    {
-                        Console.WriteLine($"[!] {langVM.GetString("error_invalid_index")}: {part}");
                     }
                 }
 
                 if (selectedJobs.Count > 0)
                 {
-                    Console.WriteLine($"\n>>> {langVM.GetString("executing_selection")} : {string.Join(", ", selectedJobs)}");
-                    foreach (var jobName in selectedJobs)
+                    foreach (string jobName in selectedJobs)
                     {
-                        Console.WriteLine($"\n[En cours : {jobName}]");
+                        Console.ForegroundColor = ConsoleColor.Cyan;
+                        Console.WriteLine("\n " + langVM.GetString("executing_single").Replace("{name}", jobName));
+                        Console.ResetColor();
                         saveVM.PerformJobs(jobName);
                     }
                 }
-                else
-                {
-                    Console.WriteLine(langVM.GetString("error_no_valid_selection"));
-                }
             }
-
-            Console.WriteLine("\n" + langVM.GetString("execution_finished"));
         }
 
         private void MenuDeleteJob()
         {
-            Console.WriteLine("=== " + langVM.GetString("delete_title") + " ===");
-            Console.WriteLine("(" + langVM.GetString("exit_hint") + ")");
+            Console.Clear();
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine($"--- {langVM.GetString("delete_title")} ---\n");
+            Console.ResetColor();
 
             List<Backup> jobs = saveVM.GetAllJobs();
-            if (jobs.Count == 0)
-            {
-                Console.WriteLine(langVM.GetString("error_no_jobs"));
-                return;
-            }
+            if (jobs.Count == 0) return;
 
-            for (int i = 0; i < jobs.Count; i++)
-            {
-                Console.WriteLine($"[{i + 1}] {jobs[i].Name}");
-            }
+            for (int i = 0; i < jobs.Count; i++) { Console.WriteLine($"  [{i + 1}] {jobs[i].Name}"); }
 
-            Console.Write("\n" + langVM.GetString("prompt_delete") + " ");
+            Console.ForegroundColor = ConsoleColor.DarkGray;
+            Console.WriteLine($"\n (Type 'exit' to cancel)");
+            Console.ResetColor();
+
+            Console.Write($"\n {langVM.GetString("prompt_delete")} ");
             string input = ReadInputOrCancel();
 
-            if (int.TryParse(input, out int index) && index > 0 && index <= jobs.Count)
+            int index;
+            if (int.TryParse(input, out index) && index > 0 && index <= jobs.Count)
             {
-                string nomASupprimer = jobs[index - 1].Name;
-                saveVM.DeleteJob(nomASupprimer);
-                Console.WriteLine(langVM.GetString("success_delete").Replace("{nom}", nomASupprimer));
-            }
-            else
-            {
-                Console.WriteLine(langVM.GetString("error_invalid_input"));
+                string nameToDelete = jobs[index - 1].Name;
+                saveVM.DeleteJob(nameToDelete);
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine("\n [OK] " + langVM.GetString("success_delete").Replace("{name}", nameToDelete));
+                Console.ResetColor();
             }
         }
 
         private void MenuChangeLanguage()
         {
+            Console.Clear();
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine($"--- {langVM.GetString("lang_title")} ---\n");
+            Console.ResetColor();
+            Console.ForegroundColor = ConsoleColor.DarkGray;
+            Console.WriteLine($" (Type 'exit' to cancel)");
+            Console.ResetColor();
+            Console.Write($"\n {langVM.GetString("prompt_lang")} ");
+
             try
             {
-                Console.WriteLine("=== " + langVM.GetString("lang_title") + " ===");
-                Console.WriteLine("(" + langVM.GetString("exit_hint") + ")");
-                Console.Write(langVM.GetString("prompt_lang") + " ");
-
                 string lang = ReadInputOrCancel();
-
                 langVM.UpdateLanguage(lang);
-
-                Console.WriteLine(langVM.GetString("success_lang"));
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine("\n [OK] " + langVM.GetString("success_lang"));
             }
-            catch (FileNotFoundException)
-            {
-                Console.WriteLine("\n[!] " + langVM.GetString("error_invalid_input") + " (en/fr only)");
-            }
-            catch (OperationCanceledException)
-            {
-                Console.WriteLine("\n" + langVM.GetString("action_cancelled"));
-            }
+            catch { Console.WriteLine("\n [!] Error (en/fr only)"); }
+            Console.ResetColor();
         }
 
         private string ReadInputOrCancel()
         {
             string input = Console.ReadLine();
-
-            if (input?.ToLower() == "exit")
-            {
-                throw new OperationCanceledException();
-            }
-
+            if (input?.ToLower() == "exit") throw new OperationCanceledException();
             return input;
         }
     }

@@ -2,6 +2,7 @@
 
 namespace EasyLog
 {
+    // Data model for a log entry, shared by LogDaily and LogLive.
     public class LogModel
     {
         // For Both
@@ -15,12 +16,14 @@ namespace EasyLog
         public long? fileSize { get; set; }
         public double? fileTransferTime { get; set; }
 
-
         // For Live
         public string? state { get; set; }
         public int? totalFilesToCopy { get; set; }
         public long? totalFilesSize { get; set; }
         public int? nbFilesLeftToDo { get; set; }
+        public long? sizeFileRemaining { get; set; }
         public int? progression { get; set; }
+        public string? currentSourceFile { get; set; }
+        public string? currentDestinationFile { get; set; }
     }
 }

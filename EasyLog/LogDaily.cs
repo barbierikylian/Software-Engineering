@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 
 namespace EasyLog
 {
+    // Log strategy that APPENDS entries to a daily JSON file (yyyy-MM-dd.json).
     public class LogDaily : ILogStrategy
     {
         private readonly string _logDirectory;
