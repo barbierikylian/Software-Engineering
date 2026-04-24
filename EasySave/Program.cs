@@ -8,7 +8,7 @@ class Program
         string name = "1";
         string source = "C:\test\oui";
         string target = "C:\test\azer";
-        string type = "Complete";
+        string type = "differential";
         BackupService myJob = new BackupService();
         Backup backup = new Backup(name, source, target, type)
         BackupService.CreateJob(backup);
