@@ -1,7 +1,10 @@
 ﻿using EasyLog;
 using EasySave.Model;
 using EasySave.Services;
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Text.Json;
 
 namespace EasySave.Service
@@ -26,7 +29,7 @@ namespace EasySave.Service
         public void PerformJobs(Backup job)
         {
             ILogStrategy liveLogger = new LogLive(StateFilePath);
-            var stats = GetStats(job);
+            (int count, long size) stats = GetStats(job);
 
             LogModel liveState = new LogModel
             {
@@ -106,7 +109,7 @@ namespace EasySave.Service
 
         public void SaveJobs()
         {
-            var options = new JsonSerializerOptions { WriteIndented = true };
+            JsonSerializerOptions options = new JsonSerializerOptions { WriteIndented = true };
             File.WriteAllText(JobsFilePath, JsonSerializer.Serialize(Jobs, options));
         }
 
