@@ -5,8 +5,14 @@ class Program
 {
     static void Main(string[] args)
     {
-
-        Backup myJob = new Backup("Test_Job", @"C:\test\oui", @"C:\test\azer", "Complete");
+        string name = "1";
+        string source = "C:\test\oui";
+        string target = "C:\test\azer";
+        string type = "Complete";
+        BackupService myJob = new BackupService();
+        Backup backup = new Backup(name, source, target, type)
+        BackupService.CreateJob(backup);
+        BackupService.PerformJobs(backup);
 
 
         Console.WriteLine("test save");
