@@ -11,8 +11,8 @@ namespace EasySave.Services
 
             try
             {
-                string source = SaveServices.ConvertToUNC(job.SourcePath);
-                string target = SaveServices.ConvertToUNC(job.TargetPath);
+                string source = SaveServices.ConvertToUNC(job.FileSource);
+                string target = SaveServices.ConvertToUNC(job.FileDestination);
 
                 if (!Directory.Exists(source)) return;
 
@@ -43,7 +43,7 @@ namespace EasySave.Services
             {
                 string folderName = Path.GetFileName(directoryPath);
                 string nextTarget = Path.Combine(currentTarget, folderName);
-                CopyDirectoryRecursiveIncremental(directoryPath, nextTarget);
+                CopyDirectoryRecursive(directoryPath, nextTarget);
             }
         }
 
