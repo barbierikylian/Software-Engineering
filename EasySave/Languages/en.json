@@ -16,14 +16,18 @@
   "list_title": "Configured Backup Jobs",
   "delete_title": "Delete a job",
   "lang_title": "Language selection",
+  "instructions_title": "Instructions",
   "label_name": "Job name",
   "label_source": "Source path",
   "label_dest": "Destination path",
   "label_type": "Type (Full/Differential)",
-  "prompt_execute": "Enter job number (or Enter for all):",
+  "hint_all": "All jobs",
+  "hint_multiple": "Specific jobs",
+  "prompt_execute": "Enter job numbers or Enter for all:",
   "prompt_delete": "Enter job number to delete:",
   "prompt_lang": "Choose language (en/fr):",
   "executing_all": "Executing all jobs...",
+  "executing_selection": "Executing selected jobs",
   "executing_single": "Executing job: {name}",
   "execution_finished": "Execution finished!",
   "success_create": "Job '{nom}' created successfully!",
@@ -32,5 +36,7 @@
   "error_max_jobs": "Error: Maximum 5 jobs reached!",
   "error_no_jobs": "No jobs configured.",
   "error_invalid_option": "Invalid option.",
-  "error_invalid_input": "Invalid input."
+  "error_invalid_input": "Invalid input.",
+  "error_invalid_index": "Invalid job index",
+  "error_no_valid_selection": "No valid jobs selected."
 }

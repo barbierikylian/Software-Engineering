@@ -97,44 +97,7 @@ namespace EasySave.View
             Console.WriteLine(langVM.GetString("success_create").Replace("{nom}", nom));
         }
 
-        private void MenuExecuteJob()
-        {
-            Console.WriteLine("=== " + langVM.GetString("execute_title") + " ===");
-            Console.WriteLine("(" + langVM.GetString("exit_hint") + ")");
-
-            List<Backup> jobs = saveVM.GetAllJobs();
-            if (jobs.Count == 0)
-            {
-                Console.WriteLine(langVM.GetString("error_no_jobs"));
-                return;
-            }
-
-            for (int i = 0; i < jobs.Count; i++)
-            {
-                Console.WriteLine($"[{i + 1}] {jobs[i].Name} [{jobs[i].Type}]");
-            }
-
-            Console.Write("\n" + langVM.GetString("prompt_execute") + " ");
-            string input = ReadInputOrCancel();
-
-            if (string.IsNullOrWhiteSpace(input))
-            {
-                Console.WriteLine(langVM.GetString("executing_all"));
-                saveVM.PerformJobs("");
-            }
-            else if (int.TryParse(input, out int index) && index > 0 && index <= jobs.Count)
-            {
-                string jobName = jobs[index - 1].Name;
-                Console.WriteLine(langVM.GetString("executing_single").Replace("{name}", jobName));
-                saveVM.PerformJobs(jobName);
-            }
-            else
-            {
-                Console.WriteLine(langVM.GetString("error_invalid_input"));
-            }
-
-            Console.WriteLine(langVM.GetString("execution_finished"));
-        }
+        
 
         private void MenuListJobs()
         {
@@ -152,6 +115,72 @@ namespace EasySave.View
             {
                 Console.WriteLine($"[{i + 1}] {jobs[i].Name} [{jobs[i].Type}] : {jobs[i].FileSource} -> {jobs[i].FileDestination}");
             }
+        }
+        private void MenuExecuteJob()
+        {
+            Console.WriteLine("\n=== " + langVM.GetString("execute_title") + " ===");
+            List<Backup> jobs = saveVM.GetAllJobs();
+
+            if (jobs.Count == 0)
+            {
+                Console.WriteLine(langVM.GetString("error_no_jobs"));
+                return;
+            }
+            for (int i = 0; i < jobs.Count; i++)
+            {
+                Console.WriteLine($"[{i + 1}] {jobs[i].Name} ({jobs[i].FileSource} -> {jobs[i].FileDestination})");
+            }
+
+            Console.WriteLine("\n--- " + langVM.GetString("instructions_title") + " ---");
+            Console.WriteLine(langVM.GetString("hint_all") + " : [Entrée]");
+            Console.WriteLine(langVM.GetString("hint_multiple") + " : 1;3;4");
+            Console.WriteLine(langVM.GetString("exit_hint"));
+
+            Console.Write("\n" + langVM.GetString("prompt_execute") + " ");
+            string input = ReadInputOrCancel();
+
+            if (string.IsNullOrWhiteSpace(input))
+            {
+                Console.WriteLine(">>> " + langVM.GetString("executing_all"));
+                saveVM.PerformJobs("");
+            }
+            else if (input.ToLower() == "q")
+            {
+                return;
+            }
+            else
+            {
+                var parts = input.Split(new[] { ';', ',', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                List<string> selectedJobs = new List<string>();
+
+                foreach (var part in parts)
+                {
+                    if (int.TryParse(part, out int index) && index > 0 && index <= jobs.Count)
+                    {
+                        selectedJobs.Add(jobs[index - 1].Name);
+                    }
+                    else
+                    {
+                        Console.WriteLine($"[!] {langVM.GetString("error_invalid_index")}: {part}");
+                    }
+                }
+
+                if (selectedJobs.Count > 0)
+                {
+                    Console.WriteLine($"\n>>> {langVM.GetString("executing_selection")} : {string.Join(", ", selectedJobs)}");
+                    foreach (var jobName in selectedJobs)
+                    {
+                        Console.WriteLine($"\n[En cours : {jobName}]");
+                        saveVM.PerformJobs(jobName);
+                    }
+                }
+                else
+                {
+                    Console.WriteLine(langVM.GetString("error_no_valid_selection"));
+                }
+            }
+
+            Console.WriteLine("\n" + langVM.GetString("execution_finished"));
         }
 
         private void MenuDeleteJob()
