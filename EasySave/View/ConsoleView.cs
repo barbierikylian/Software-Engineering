@@ -77,13 +77,13 @@ namespace EasySave.View
         private void PrintHeader()
         {
             Console.ForegroundColor = ConsoleColor.Cyan;
-            Console.WriteLine(@"  ______                         _____                ");
-            Console.WriteLine(@" |  ____|                       / ____|               ");
-            Console.WriteLine(@" | |__   __ _ ___ _   _   _____| (___   __ ___   _____ ");
-            Console.WriteLine(@" |  __| / _` / __| | | | / ___| \___ \ / _` \ \ / / _ \");
-            Console.WriteLine(@" | |___| (_| \__ \ |_| | \___ \ ____) | (_| |\ V /  __/");
-            Console.WriteLine(@" |______\__,_|___/\__, | /____/|_____/ \__,_| \_/ \___|");
-            Console.WriteLine(@"                   |___/                              ");
+            Console.WriteLine(@"  ______                       _____                 ");
+            Console.WriteLine(@" |  ____|                     / ____|                ");
+            Console.WriteLine(@" | |__   __ _ ___ _   _      | (___   __ ___   _____ ");
+            Console.WriteLine(@" |  __| / _` / __| | | |      \___ \ / _` \ \ / / _ \");
+            Console.WriteLine(@" | |____\__,_|___/\__, |      ____) | (_| |\ V /  __/");
+            Console.WriteLine(@" |______\____|____/|___/     |_____/ \__,_| \_/ \___|");
+            Console.WriteLine(@"                   |___/                             ");
             Console.WriteLine("\n " + langVM.GetString("welcome").ToUpper());
             Console.WriteLine(new string('═', 55) + "\n");
             Console.ResetColor();
