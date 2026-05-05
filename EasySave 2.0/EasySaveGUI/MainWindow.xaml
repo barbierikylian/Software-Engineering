@@ -234,6 +234,37 @@
             </Style.Triggers>
         </Style>
 
+        <Style x:Key="RadioFlat" TargetType="RadioButton">
+            <Setter Property="Foreground"  Value="{StaticResource TextSecondary}"/>
+            <Setter Property="Background"  Value="{StaticResource BgRaised}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
+            <Setter Property="Cursor"      Value="Hand"/>
+            <Setter Property="Padding"     Value="14,8"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="Root"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="1" CornerRadius="6"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Root" Property="Background"  Value="#1f3a5f"/>
+                                <Setter TargetName="Root" Property="BorderBrush" Value="{StaticResource AccentBlue}"/>
+                                <Setter Property="Foreground" Value="#58a6ff"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Root" Property="Background" Value="#30363d"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <Style TargetType="DataGrid">
             <Setter Property="Background"               Value="Transparent"/>
             <Setter Property="BorderThickness"          Value="0"/>
@@ -339,8 +370,7 @@
                     <Border x:Name="BannerError"
                             Background="#2d1515" BorderBrush="{StaticResource AccentRed}"
                             BorderThickness="1" CornerRadius="6"
-                            Padding="12,9" Margin="0,0,0,12"
-                            Visibility="Collapsed">
+                            Padding="12,9" Margin="0,0,0,12" Visibility="Collapsed">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="[!] " Foreground="{StaticResource AccentRed}" FontWeight="Bold" FontFamily="Consolas"/>
                             <TextBlock x:Name="TxtBannerError" Foreground="#ffa198" TextWrapping="Wrap"/>
@@ -350,8 +380,7 @@
                     <Border x:Name="BannerSuccess"
                             Background="#0f2a18" BorderBrush="{StaticResource AccentGreen}"
                             BorderThickness="1" CornerRadius="6"
-                            Padding="12,9" Margin="0,0,0,12"
-                            Visibility="Collapsed">
+                            Padding="12,9" Margin="0,0,0,12" Visibility="Collapsed">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="[OK] " Foreground="{StaticResource AccentGreen}" FontWeight="Bold" FontFamily="Consolas"/>
                             <TextBlock x:Name="TxtBannerSuccess" Foreground="#56d364" TextWrapping="Wrap"/>
@@ -362,22 +391,19 @@
                                Foreground="{StaticResource TextSecondary}" FontSize="12" Margin="0,0,0,4"/>
                     <TextBox x:Name="TxtName" Margin="0,0,0,3"/>
                     <TextBlock x:Name="ErrName" Foreground="{StaticResource AccentRed}"
-                               FontSize="11" FontFamily="Consolas"
-                               Margin="2,0,0,10" Visibility="Collapsed"/>
+                               FontSize="11" FontFamily="Consolas" Margin="2,0,0,10" Visibility="Collapsed"/>
 
                     <TextBlock x:Name="LblSource" Text="Source Path"
                                Foreground="{StaticResource TextSecondary}" FontSize="12" Margin="0,0,0,4"/>
                     <TextBox x:Name="TxtSource" Margin="0,0,0,3"/>
                     <TextBlock x:Name="ErrSource" Foreground="{StaticResource AccentRed}"
-                               FontSize="11" FontFamily="Consolas"
-                               Margin="2,0,0,10" Visibility="Collapsed"/>
+                               FontSize="11" FontFamily="Consolas" Margin="2,0,0,10" Visibility="Collapsed"/>
 
                     <TextBlock x:Name="LblTarget" Text="Destination Path"
                                Foreground="{StaticResource TextSecondary}" FontSize="12" Margin="0,0,0,4"/>
                     <TextBox x:Name="TxtTarget" Margin="0,0,0,3"/>
                     <TextBlock x:Name="ErrTarget" Foreground="{StaticResource AccentRed}"
-                               FontSize="11" FontFamily="Consolas"
-                               Margin="2,0,0,10" Visibility="Collapsed"/>
+                               FontSize="11" FontFamily="Consolas" Margin="2,0,0,10" Visibility="Collapsed"/>
 
                     <TextBlock x:Name="LblType" Text="Backup Type"
                                Foreground="{StaticResource TextSecondary}" FontSize="12" Margin="0,0,0,4"/>
@@ -403,12 +429,93 @@
                     <TextBox x:Name="TxtBusinessSoft" Text="calculator" Margin="0,0,0,8"/>
 
                     <Border Background="#1c1a0e" BorderBrush="{StaticResource AccentYellow}"
-                            BorderThickness="1" CornerRadius="6" Padding="10,7">
+                            BorderThickness="1" CornerRadius="6" Padding="10,7" Margin="0,0,0,24">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="(!) " Foreground="{StaticResource AccentYellow}"
-                                       FontWeight="Bold" FontFamily="Consolas"/>
+                            <TextBlock Text="(!) " Foreground="{StaticResource AccentYellow}" FontWeight="Bold" FontFamily="Consolas"/>
                             <TextBlock x:Name="LblHintMultipleApps" Text="Separate multiple apps with ;" Foreground="#e3b341" FontSize="11"/>
                         </StackPanel>
+                    </Border>
+
+                    <Separator Margin="0,0,0,24"/>
+
+                    <TextBlock x:Name="LblLogsTitle" Text="Log Files"
+                               FontSize="16" FontWeight="Bold"
+                               Foreground="{StaticResource TextPrimary}"
+                               Margin="0,0,0,14"/>
+
+                    <TextBlock x:Name="LblLogFormat" Text="Log Format"
+                               Foreground="{StaticResource TextSecondary}" FontSize="12" Margin="0,0,0,8"/>
+
+                    <Grid Margin="0,0,0,16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="8"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <RadioButton x:Name="RbJson" Grid.Column="0"
+                                     Content="JSON" IsChecked="True"
+                                     Style="{StaticResource RadioFlat}"
+                                     />
+                        <!--Checked="RbLogFormat_Checked"-->
+                        <RadioButton x:Name="RbXml" Grid.Column="2"
+                                     Content="XML"
+                                     Style="{StaticResource RadioFlat}"
+                                     />
+                        <!--Checked="RbLogFormat_Checked"-->
+                    </Grid>
+
+                    <TextBlock x:Name="LblLogLocation" Text="Log Location"
+           Foreground="{StaticResource TextSecondary}" FontSize="12" Margin="0,0,0,8"/>
+
+                    <Border Background="#0f1f3d" BorderBrush="{StaticResource AccentBlue}"
+        BorderThickness="1" CornerRadius="6" Padding="12,10" Margin="0,0,0,8">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock x:Name="TxtLogPath"
+                   Grid.Column="0"
+                   Foreground="#58a6ff" FontSize="11" FontFamily="Consolas"
+                   TextTrimming="CharacterEllipsis"
+                   VerticalAlignment="Center"/>
+                            <Border Grid.Column="1"
+                Background="Transparent" BorderBrush="#58a6ff"
+                BorderThickness="1" CornerRadius="5"
+                Padding="8,4" Margin="10,0,0,0"
+                Cursor="Hand"
+                MouseLeftButtonUp="OpenLogsFolder_Click">
+                                <TextBlock Text="..." Foreground="#58a6ff" FontSize="13" FontWeight="Bold"
+                       VerticalAlignment="Center"/>
+                            </Border>
+                        </Grid>
+                    </Border>
+
+                    <TextBlock x:Name="LblDataLocation" Text="Data Location"
+           Foreground="{StaticResource TextSecondary}" FontSize="12" Margin="0,0,0,8"/>
+
+                    <Border Background="#0f1f3d" BorderBrush="{StaticResource AccentBlue}"
+        BorderThickness="1" CornerRadius="6" Padding="12,10">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock x:Name="TxtDataPath"
+                   Grid.Column="0"
+                   Foreground="#58a6ff" FontSize="11" FontFamily="Consolas"
+                   TextTrimming="CharacterEllipsis"
+                   VerticalAlignment="Center"/>
+                            <Border Grid.Column="1"
+                Background="Transparent" BorderBrush="#58a6ff"
+                BorderThickness="1" CornerRadius="5"
+                Padding="8,4" Margin="10,0,0,0"
+                Cursor="Hand"
+                MouseLeftButtonUp="OpenDataFolder_Click">
+                                <TextBlock Text="..." Foreground="#58a6ff" FontSize="13" FontWeight="Bold"
+                       VerticalAlignment="Center"/>
+                            </Border>
+                        </Grid>
                     </Border>
 
                 </StackPanel>
@@ -434,8 +541,7 @@
                 <Border x:Name="BannerExecError"
                         Background="#2d1515" BorderBrush="{StaticResource AccentRed}"
                         BorderThickness="1" CornerRadius="6"
-                        Padding="12,9" Margin="0,0,0,8"
-                        Visibility="Collapsed">
+                        Padding="12,9" Margin="0,0,0,8" Visibility="Collapsed">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="[!] " Foreground="{StaticResource AccentRed}" FontWeight="Bold" FontFamily="Consolas"/>
                         <TextBlock x:Name="TxtBannerExecError" Foreground="#ffa198" TextWrapping="Wrap"/>
@@ -445,8 +551,7 @@
                 <Border x:Name="BannerRunning"
                         Background="#0f1f3d" BorderBrush="{StaticResource AccentBlue}"
                         BorderThickness="1" CornerRadius="6"
-                        Padding="12,9" Margin="0,0,0,8"
-                        Visibility="Collapsed">
+                        Padding="12,9" Margin="0,0,0,8" Visibility="Collapsed">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="&gt;&gt;&gt; " Foreground="#58a6ff" FontWeight="Bold" FontFamily="Consolas"/>
                         <TextBlock x:Name="TxtBannerRunning" Foreground="#58a6ff" TextWrapping="Wrap"/>
@@ -456,8 +561,7 @@
                 <Border x:Name="BannerExecSuccess"
                         Background="#0f2a18" BorderBrush="{StaticResource AccentGreen}"
                         BorderThickness="1" CornerRadius="6"
-                        Padding="12,9" Margin="0,0,0,8"
-                        Visibility="Collapsed">
+                        Padding="12,9" Margin="0,0,0,8" Visibility="Collapsed">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="[OK] " Foreground="{StaticResource AccentGreen}" FontWeight="Bold" FontFamily="Consolas"/>
                         <TextBlock x:Name="TxtBannerExecSuccess" Foreground="#56d364" TextWrapping="Wrap"/>
@@ -467,12 +571,10 @@
                 <Border x:Name="BannerHint"
                         Background="#1c1a0e" BorderBrush="{StaticResource AccentYellow}"
                         BorderThickness="1" CornerRadius="6"
-                        Padding="12,9"
-                        Visibility="Collapsed">
+                        Padding="12,9" Visibility="Collapsed">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="(!) " Foreground="{StaticResource AccentYellow}" FontWeight="Bold" FontFamily="Consolas"/>
-                        <TextBlock x:Name="TxtBannerHint" Foreground="#e3b341" TextWrapping="Wrap"
-                                   Text="No job selected. Hold Ctrl or Shift to select multiple jobs."/>
+                        <TextBlock x:Name="TxtBannerHint" Foreground="#e3b341" TextWrapping="Wrap"/>
                     </StackPanel>
                 </Border>
 
@@ -483,48 +585,47 @@
                     CornerRadius="10" Background="#161b22"
                     Margin="0,0,0,16" ClipToBounds="True">
                 <DataGrid x:Name="GridJobs"
-                    SelectionMode="Extended"
-                    AutoGenerateColumns="False" 
-                    IsReadOnly="True"
-                    HeadersVisibility="Column"
-                    SelectionUnit="FullRow"
-                    SelectionChanged="GridJobs_SelectionChanged">
+                          SelectionMode="Extended"
+                          AutoGenerateColumns="False"
+                          IsReadOnly="True"
+                          HeadersVisibility="Column"
+                          SelectionUnit="FullRow"
+                          SelectionChanged="GridJobs_SelectionChanged">
                     <DataGrid.Columns>
-                        <DataGridTextColumn x:Name="ColName" Header="Name" Binding="{Binding Name}" Width="*"/>
-                        <DataGridTextColumn x:Name="ColSource" Header="Source" Binding="{Binding FileSource}" Width="*"/>
+                        <DataGridTextColumn x:Name="ColName"   Header="Name"   Binding="{Binding Name}"            Width="*"/>
+                        <DataGridTextColumn x:Name="ColSource" Header="Source" Binding="{Binding FileSource}"      Width="*"/>
                         <DataGridTextColumn x:Name="ColTarget" Header="Target" Binding="{Binding FileDestination}" Width="*"/>
-                        <DataGridTextColumn x:Name="ColType" Header="Type" Binding="{Binding Type}" Width="Auto"/>
+                        <DataGridTextColumn x:Name="ColType"   Header="Type"   Binding="{Binding Type}"            Width="Auto"/>
                     </DataGrid.Columns>
                 </DataGrid>
             </Border>
 
-                <Grid Grid.Row="3" Margin="0,0,0,16">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-                    <TextBlock x:Name="LblCurrentFile" Grid.Row="0"
+            <Grid Grid.Row="3" Margin="0,0,0,16">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <TextBlock x:Name="LblCurrentFile" Grid.Row="0"
                            FontSize="12" FontFamily="Consolas"
-                           Margin="0,0,0,8"
-                           TextTrimming="CharacterEllipsis">
+                           Margin="0,0,0,8" TextTrimming="CharacterEllipsis">
                     <Run Foreground="#7d8590">...</Run>
-                    </TextBlock>
-                    <ProgressBar x:Name="ProgBar" Grid.Row="1"
+                </TextBlock>
+                <ProgressBar x:Name="ProgBar" Grid.Row="1"
                              Height="6" Minimum="0" Maximum="100" Value="0"/>
-                </Grid>
+            </Grid>
 
-                <StackPanel Grid.Row="4" Orientation="Horizontal">
-                    <Button x:Name="BtnDelete"     Content="Delete"
+            <StackPanel Grid.Row="4" Orientation="Horizontal">
+                <Button x:Name="BtnDelete"     Content="Delete"
                         Click="BtnDelete_Click"
                         Style="{StaticResource BtnDanger}"
                         Margin="0,0,10,0"/>
-                    <Button x:Name="BtnExecute"    Content="Execute Selected"
+                <Button x:Name="BtnExecute"    Content="Execute Selected"
                         Click="BtnExecute_Click"
                         Margin="0,0,10,0"/>
-                    <Button x:Name="BtnExecuteAll" Content="Execute All Jobs"
+                <Button x:Name="BtnExecuteAll" Content="Execute All Jobs"
                         Click="BtnExecuteAll_Click"
                         Style="{StaticResource BtnPrimary}"/>
-                </StackPanel>
+            </StackPanel>
         </Grid>
     </Grid>
 </Window>

@@ -47,5 +47,10 @@
   "error_source_required": "Source path is required.",
   "error_dest_required": "Destination path is required.",
   "error_select_job": "Please select a job first.",
-  "error_no_jobs_exec": "No backup jobs configured. Create one first."
+  "error_no_jobs_exec": "No backup jobs configured. Create one first.",
+  "hint_ctrl_click": "Use Ctrl+Click or Shift+Click to select multiple jobs.",
+  "label_logs_title": "Log Files",
+  "label_log_format": "Log Format",
+  "label_log_location": "Log Location",
+  "label_data_location": "Data Location"
 }

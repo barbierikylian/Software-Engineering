@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Diagnostics;
+using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -21,6 +23,7 @@ namespace EasySaveGUI
             _langVM = new LanguageViewModel();
             CmbLanguage.SelectedIndex = 0;
             RefreshGrid();
+            UpdateLogPath();
         }
 
         private void UpdateLanguageUI()
@@ -36,13 +39,15 @@ namespace EasySaveGUI
                 LblType.Text = _langVM.GetString("label_type");
                 LblSettings.Text = _langVM.GetString("label_settings");
                 LblBusinessSoft.Text = _langVM.GetString("label_business_soft");
+                LblLogsTitle.Text = _langVM.GetString("label_logs_title");
+                LblLogFormat.Text = _langVM.GetString("label_log_format");
+                LblLogLocation.Text = _langVM.GetString("label_log_location");
                 BtnAdd.Content = _langVM.GetString("menu_create");
                 BtnDelete.Content = _langVM.GetString("menu_delete");
                 BtnExecute.Content = _langVM.GetString("menu_execute");
                 BtnExecuteAll.Content = _langVM.GetString("hint_all");
-                TxtBannerHint.Text = _langVM.GetString("error_select_job");
+                TxtBannerHint.Text = _langVM.GetString("hint_ctrl_click");
                 LblHintMultipleApps.Text = _langVM.GetString("hint_multiple_apps");
-
                 ColName.Header = _langVM.GetString("label_name");
                 ColSource.Header = _langVM.GetString("label_source");
                 ColTarget.Header = _langVM.GetString("label_dest");
@@ -64,6 +69,33 @@ namespace EasySaveGUI
         {
             GridJobs.ItemsSource = null;
             GridJobs.ItemsSource = _saveVM.GetAllJobs();
+        }
+
+        private void UpdateLogPath()
+        {
+            string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            TxtLogPath.Text = Path.Combine(appData, "EasySave", "Logs");
+            TxtDataPath.Text = Path.Combine(appData, "EasySave", "data");
+        }
+
+        //private void RbLogFormat_Checked(object sender, RoutedEventArgs e)
+        //{
+        //    if (_saveVM == null) return;
+        //    string format = RbJson.IsChecked == true ? "json" : "xml";
+        //    _saveVM.SetLogFormat(format);
+        //}
+
+        private void OpenLogsFolder_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "EasySave", "Logs");
+            if (!Directory.Exists(path)) Directory.CreateDirectory(path);
+            Process.Start("explorer.exe", path);
+        }
+        private void OpenDataFolder_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "EasySave", "data");
+            if (!Directory.Exists(path)) Directory.CreateDirectory(path);
+            Process.Start("explorer.exe", path);
         }
 
         private void ClearFormBanners()
@@ -127,7 +159,7 @@ namespace EasySaveGUI
         private void ShowHintBanner()
         {
             ClearExecBanners();
-            TxtBannerHint.Text = _langVM.GetString("error_select_job");
+            TxtBannerHint.Text = _langVM.GetString("hint_ctrl_click");
             BannerHint.Visibility = Visibility.Visible;
         }
 
@@ -137,18 +169,29 @@ namespace EasySaveGUI
 
             if (text == "...")
             {
-                LblCurrentFile.Inlines.Add(new Run("...")
-                {
-                    Foreground = new SolidColorBrush(Color.FromRgb(0x7d, 0x85, 0x90))
-                });
+                LblCurrentFile.Inlines.Add(new Run("...") { Foreground = new SolidColorBrush(Color.FromRgb(0x7d, 0x85, 0x90)) });
+                return;
             }
-            else
+
+            if (text.StartsWith("Added") || text.StartsWith("[+]"))
             {
-                LblCurrentFile.Inlines.Add(new Run(text)
-                {
-                    Foreground = new SolidColorBrush(Color.FromRgb(0x56, 0xd3, 0x64))
-                });
+                string clean = text.Replace("[+] Added", "").Replace("Added", "").TrimStart();
+                LblCurrentFile.Inlines.Add(new Run("[+] ") { Foreground = new SolidColorBrush(Color.FromRgb(0x56, 0xd3, 0x64)), FontWeight = FontWeights.Bold, FontFamily = new FontFamily("Consolas") });
+                LblCurrentFile.Inlines.Add(new Run("Added  ") { Foreground = new SolidColorBrush(Color.FromRgb(0x56, 0xd3, 0x64)) });
+                LblCurrentFile.Inlines.Add(new Run(clean) { Foreground = new SolidColorBrush(Color.FromRgb(0xe6, 0xed, 0xf3)) });
+                return;
             }
+
+            if (text.StartsWith("Updated") || text.StartsWith("[~]"))
+            {
+                string clean = text.Replace("[~] Updated", "").Replace("Updated", "").TrimStart();
+                LblCurrentFile.Inlines.Add(new Run("[~] ") { Foreground = new SolidColorBrush(Color.FromRgb(0x58, 0xa6, 0xff)), FontWeight = FontWeights.Bold, FontFamily = new FontFamily("Consolas") });
+                LblCurrentFile.Inlines.Add(new Run("Updated  ") { Foreground = new SolidColorBrush(Color.FromRgb(0x58, 0xa6, 0xff)) });
+                LblCurrentFile.Inlines.Add(new Run(clean) { Foreground = new SolidColorBrush(Color.FromRgb(0xe6, 0xed, 0xf3)) });
+                return;
+            }
+
+            LblCurrentFile.Inlines.Add(new Run(text) { Foreground = new SolidColorBrush(Color.FromRgb(0x7d, 0x85, 0x90)) });
         }
 
         private void SetButtonsEnabled(bool enabled)
@@ -162,7 +205,6 @@ namespace EasySaveGUI
         private void BtnAdd_Click(object sender, RoutedEventArgs e)
         {
             ClearFormBanners();
-
             bool valid = true;
 
             if (string.IsNullOrWhiteSpace(TxtName.Text))
@@ -191,9 +233,7 @@ namespace EasySaveGUI
             string name = TxtName.Text.Trim();
             _saveVM.CreateJob(name, TxtSource.Text.Trim(), TxtTarget.Text.Trim(), CmbType.Text);
             RefreshGrid();
-
             ShowFormSuccess(_langVM.GetString("success_create")?.Replace("{name}", name));
-
             TxtName.Clear();
             TxtSource.Clear();
             TxtTarget.Clear();
@@ -206,7 +246,6 @@ namespace EasySaveGUI
                 ShowExecError(_langVM.GetString("error_select_job"));
                 return;
             }
-
             _saveVM.DeleteJob(selectedJob.Name);
             RefreshGrid();
             ShowExecSuccess(_langVM.GetString("success_delete")?.Replace("{name}", selectedJob.Name));
@@ -221,7 +260,6 @@ namespace EasySaveGUI
             }
 
             var progress = new Progress<int>(p => ProgBar.Value = p);
-
             Action<string> updateText = text =>
                 Application.Current.Dispatcher.Invoke(() => SetCurrentFileLabel(text));
 
@@ -230,16 +268,11 @@ namespace EasySaveGUI
 
             try
             {
-                string errorMessage = await Task.Run(() => _saveVM.PerformJobs(selectedJob.Name, progress, updateText));
-
-                if (string.IsNullOrEmpty(errorMessage))
-                {
+                string error = await Task.Run(() => _saveVM.PerformJobs(selectedJob.Name, progress, updateText));
+                if (string.IsNullOrEmpty(error))
                     ShowExecSuccess(_langVM.GetString("execution_finished"));
-                }
                 else
-                {
-                    ShowExecError(errorMessage);
-                }
+                    ShowExecError(error);
             }
             catch (Exception ex)
             {
@@ -262,7 +295,6 @@ namespace EasySaveGUI
             }
 
             var progress = new Progress<int>(p => ProgBar.Value = p);
-
             Action<string> updateText = text =>
                 Application.Current.Dispatcher.Invoke(() => SetCurrentFileLabel(text));
 
@@ -271,16 +303,11 @@ namespace EasySaveGUI
 
             try
             {
-                string errorMessage = await Task.Run(() => _saveVM.PerformJobs("", progress, updateText));
-
-                if (string.IsNullOrEmpty(errorMessage))
-                {
+                string error = await Task.Run(() => _saveVM.PerformJobs("", progress, updateText));
+                if (string.IsNullOrEmpty(error))
                     ShowExecSuccess(_langVM.GetString("success_execute_all"));
-                }
                 else
-                {
-                    ShowExecError(errorMessage);
-                }
+                    ShowExecError(error);
             }
             catch (Exception ex)
             {
