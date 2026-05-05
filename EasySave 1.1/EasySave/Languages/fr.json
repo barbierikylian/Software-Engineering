@@ -38,5 +38,8 @@
   "error_invalid_option": "Option invalide.",
   "error_invalid_input": "Saisie invalide.",
   "error_invalid_index": "Numéro de travail invalide",
-  "error_no_valid_selection": "Aucun travail valide sélectionné."
+  "error_no_valid_selection": "Aucun travail valide sélectionné.",
+  "prompt_format": "Changer le format des logs :",
+  "menu_log_format": "Paramètre des logs",
+  "logformat_title":  "Titre des formats"
 }

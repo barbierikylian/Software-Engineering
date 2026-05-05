@@ -30,7 +30,8 @@ namespace EasySave.View
                 PrintMenuOption("3", langVM.GetString("menu_list"), ConsoleColor.Green);
                 PrintMenuOption("4", langVM.GetString("menu_delete"), ConsoleColor.Green);
                 PrintMenuOption("5", langVM.GetString("menu_language"), ConsoleColor.Yellow);
-                PrintMenuOption("6", langVM.GetString("menu_exit"), ConsoleColor.Red);
+                PrintMenuOption("6", langVM.GetString("menu_log_format"), ConsoleColor.Yellow);
+                PrintMenuOption("7", langVM.GetString("menu_exit"), ConsoleColor.Red);
 
                 Console.WriteLine("\n" + new string('─', 40));
                 Console.Write($" {langVM.GetString("choose_option")} ");
@@ -46,7 +47,8 @@ namespace EasySave.View
                         case "3": MenuListJobs(); break;
                         case "4": MenuDeleteJob(); break;
                         case "5": MenuChangeLanguage(); break;
-                        case "6":
+                        case "6": MenuChangeLogFormat(); break;
+                        case "7":
                             Console.WriteLine("\n " + langVM.GetString("goodbye"));
                             isRunning = false;
                             break;
@@ -266,6 +268,45 @@ namespace EasySave.View
                 Console.WriteLine("\n [OK] " + langVM.GetString("success_lang"));
             }
             catch { Console.WriteLine("\n [!] Error (en/fr only)"); }
+            Console.ResetColor();
+        }
+
+        private void MenuChangeLogFormat()
+        {
+            Console.Clear();
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine($"--- {langVM.GetString("logformat_title")} ---\n");
+            Console.ResetColor();
+
+            Console.WriteLine("  [1] JSON");
+            Console.WriteLine("  [2] XML");
+
+            Console.ForegroundColor = ConsoleColor.DarkGray;
+            Console.WriteLine($"\n (Type 'exit' to cancel)");
+            Console.ResetColor();
+
+            Console.Write($"\n {langVM.GetString("prompt_format")} ");
+
+            string input = ReadInputOrCancel();
+
+            if (input == "1")
+            {
+                saveVM.SetLogFormat("json");
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine("\n [OK] JSON Format");
+            }
+            else if (input == "2")
+            {
+                saveVM.SetLogFormat("xml");
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine("\n [OK] XML Format");
+            }
+            else
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("\n [!] " + langVM.GetString("error_invalid_option"));
+            }
+
             Console.ResetColor();
         }
 

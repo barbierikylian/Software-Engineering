@@ -17,7 +17,7 @@ namespace EasySave.Service
         private static readonly string ConfigDir = Path.Combine(AppDataFolder, "EasySave", "data");
         private static readonly string JobsFilePath = Path.Combine(ConfigDir, "Listjobs.json");
         private static readonly string StateFilePath = Path.Combine(ConfigDir, "state.json");
-
+        private string _currentLogFormat = "json";
         public List<Backup> Jobs { get; private set; } = new();
 
         public BackupService()
@@ -25,10 +25,16 @@ namespace EasySave.Service
             Directory.CreateDirectory(ConfigDir);
             LoadJobs();
         }
-
+        public void SetLogFormat(string format)
+        {
+            _currentLogFormat = format.ToLower();
+        }
         public void PerformJobs(Backup job)
         {
-            ILogStrategy liveLogger = new LogLive(StateFilePath);
+            IFormatter formatter = _currentLogFormat == "xml" ? new XmlFormatter() : new JsonFormatter();
+
+            ILogStrategy liveLogger = new LogLive(StateFilePath, formatter);
+
             (int count, long size) stats = GetStats(job);
 
             LogModel liveState = new LogModel
@@ -55,7 +61,7 @@ namespace EasySave.Service
 
             Stopwatch timer = Stopwatch.StartNew();
 
-            strategy.Save(job, liveState, liveLogger);
+            strategy.Save(job, liveState, liveLogger, formatter);
 
             timer.Stop();
 
