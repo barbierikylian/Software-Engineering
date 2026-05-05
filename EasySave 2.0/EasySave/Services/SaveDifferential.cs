@@ -11,7 +11,7 @@ namespace EasySave.Services
         private int _filesCopied = 0;
         private long _bytesCopied = 0;
 
-        public void Save(Backup job, LogModel state, ILogStrategy liveLogger, IProgress<int> progress = null, Action<string> currentFileCallback = null)
+        public void Save(Backup job, LogModel state, ILogStrategy liveLogger, IFormatter formatter, IProgress<int> progress = null, Action<string> currentFileCallback = null)
         {
             try
             {
@@ -42,7 +42,7 @@ namespace EasySave.Services
                 string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
                 string logDir = Path.Combine(appData, "EasySave", "logs");
 
-                ILogStrategy dailyLogger = new LogDaily(logDir);
+                ILogStrategy dailyLogger = new LogDaily(logDir, formatter);
                 dailyLogger.WriteLog(dailyLog);
 
                 progress?.Report(100);

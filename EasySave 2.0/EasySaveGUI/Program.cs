@@ -1,18 +1,17 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Windows;
 using EasySave.Model;
-using EasySave.View;
 using EasySave.ViewModel;
 
-namespace EasySave
+namespace EasySaveGUI
 {
-    class Program
+    public class Program
     {
-        static void Main(string[] args)
+        [STAThread]
+        public static void Main(string[] args)
         {
-            Console.Title = "EasySave - Console";
             SaveViewModel saveViewModel = new SaveViewModel();
-            LanguageViewModel languageViewModel = new LanguageViewModel();
 
             if (args.Length > 0)
             {
@@ -49,26 +48,20 @@ namespace EasySave
                         if (index >= 0 && index < allJobsList.Count)
                         {
                             string targetName = allJobsList[index].Name;
-
-                            Console.WriteLine($"\n[CLI] Executing job: {targetName}...");
-
                             saveViewModel.PerformJobs(targetName);
-                        }
-                        else
-                        {
-                            Console.WriteLine($"\n[Error] No job found for #{jobNum}.");
                         }
                     }
                 }
                 catch (Exception)
                 {
-                    Console.WriteLine("\n[Error] Invalid argument format. Use '1-3' or '1;3'.");
                 }
             }
             else
             {
-                ConsoleView view = new ConsoleView(saveViewModel, languageViewModel);
-                view.Display();
+                App app = new App();
+
+                MainWindow window = new MainWindow();
+                app.Run(window);
             }
         }
     }

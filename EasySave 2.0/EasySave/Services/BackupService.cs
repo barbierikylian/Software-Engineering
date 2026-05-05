@@ -14,9 +14,11 @@ namespace EasySave.Service
         private static readonly string AppDataFolder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
         private static readonly string ConfigDir = Path.Combine(AppDataFolder, "EasySave", "data");
         private static readonly string JobsFilePath = Path.Combine(ConfigDir, "Listjobs.json");
-        private static readonly string StateFilePath = Path.Combine(ConfigDir, "state.json");
+        private static readonly string StateFilePath = Path.Combine(ConfigDir, "state"); // Retrait du .json en dur
 
         public List<Backup> Jobs { get; private set; } = new();
+
+        private string _currentLogFormat = "json"; // Format par défaut
 
         public BackupService()
         {
@@ -24,19 +26,20 @@ namespace EasySave.Service
             LoadJobs();
         }
 
+        public void SetLogFormat(string format) => _currentLogFormat = format.ToLower();
+
         public string PerformJobs(Backup job, IProgress<int> progress = null, Action<string> currentFileCallback = null)
         {
             if (!Directory.Exists(job.FileSource))
-            {
                 return $"Source directory not found: {job.FileSource}";
-            }
 
             if (!Directory.Exists(job.FileDestination))
-            {
                 return $"Destination directory not found: {job.FileDestination}";
-            }
 
-            ILogStrategy liveLogger = new LogLive(StateFilePath);
+            IFormatter formatter = _currentLogFormat == "xml" ? new XmlFormatter() : new JsonFormatter();
+
+            ILogStrategy liveLogger = new LogLive(StateFilePath, formatter);
+
             (int count, long size) stats = GetStats(job);
 
             LogModel liveState = new LogModel
@@ -63,7 +66,7 @@ namespace EasySave.Service
 
             Stopwatch timer = Stopwatch.StartNew();
 
-            strategy.Save(job, liveState, liveLogger, progress, currentFileCallback);
+            strategy.Save(job, liveState, liveLogger, formatter, progress, currentFileCallback);
 
             timer.Stop();
 

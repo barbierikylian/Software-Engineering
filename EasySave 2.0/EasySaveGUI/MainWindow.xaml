@@ -455,13 +455,13 @@
                         <RadioButton x:Name="RbJson" Grid.Column="0"
                                      Content="JSON" IsChecked="True"
                                      Style="{StaticResource RadioFlat}"
-                                     />
-                        <!--Checked="RbLogFormat_Checked"-->
+                                     Checked="RbLogFormat_Checked"/>
+      
                         <RadioButton x:Name="RbXml" Grid.Column="2"
                                      Content="XML"
                                      Style="{StaticResource RadioFlat}"
-                                     />
-                        <!--Checked="RbLogFormat_Checked"-->
+                                     Checked="RbLogFormat_Checked"/>
+                        
                     </Grid>
 
                     <TextBlock x:Name="LblLogLocation" Text="Log Location"

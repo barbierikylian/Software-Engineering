@@ -78,12 +78,12 @@ namespace EasySaveGUI
             TxtDataPath.Text = Path.Combine(appData, "EasySave", "data");
         }
 
-        //private void RbLogFormat_Checked(object sender, RoutedEventArgs e)
-        //{
-        //    if (_saveVM == null) return;
-        //    string format = RbJson.IsChecked == true ? "json" : "xml";
-        //    _saveVM.SetLogFormat(format);
-        //}
+        private void RbLogFormat_Checked(object sender, RoutedEventArgs e)
+        {
+            if (_saveVM == null) return;
+            string format = RbJson.IsChecked == true ? "json" : "xml";
+            _saveVM.SetLogFormat(format);
+        }
 
         private void OpenLogsFolder_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
@@ -200,6 +200,8 @@ namespace EasySaveGUI
             BtnExecuteAll.IsEnabled = enabled;
             BtnAdd.IsEnabled = enabled;
             BtnDelete.IsEnabled = enabled;
+            RbJson.IsEnabled = enabled;
+            RbXml.IsEnabled = enabled;
         }
 
         private void BtnAdd_Click(object sender, RoutedEventArgs e)
