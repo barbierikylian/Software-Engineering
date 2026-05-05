@@ -1,31 +1,28 @@
-﻿using System;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-
-namespace EasyLog
+﻿namespace EasyLog
 {
-    // Log strategy that APPENDS entries to a daily JSON file (yyyy-MM-dd.json).
+   
     public class LogDaily : ILogStrategy
     {
         private readonly string _logDirectory;
+        private readonly IFormatter _formatter;
 
-        public LogDaily(string path)
+        public LogDaily(string path) : this(path, new JsonFormatter()) { }
+
+        
+        public LogDaily(string path, IFormatter formatter)
         {
             _logDirectory = path;
+            _formatter = formatter;
             Directory.CreateDirectory(_logDirectory);
         }
+
         public void WriteLog(LogModel logModel)
         {
-            string name = DateTime.Now.ToString("yyyy-MM-dd") + ".json";
-            string path = Path.Combine(_logDirectory, name);
+            string fileName = DateTime.Now.ToString("yyyy-MM-dd") + "." + _formatter.FileExtension;
+            string fullPath = Path.Combine(_logDirectory, fileName);
 
-            JsonSerializerOptions options = new JsonSerializerOptions();
-            options.WriteIndented = true;
-            options.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
-
-            string text = JsonSerializer.Serialize(logModel, options);
-
-            File.AppendAllText(path, text + "\n");
+            string text = _formatter.Serialize(logModel);
+            File.AppendAllText(fullPath, text + "\n");
         }
     }
 }
