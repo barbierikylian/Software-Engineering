@@ -1,18 +1,18 @@
-﻿using System;
-using System.IO;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-
-namespace EasyLog
+﻿namespace EasyLog
 {
-    // Log strategy that OVERWRITES a single file (state.json) with the current job state.
+    
     public class LogLive : ILogStrategy
     {
         private readonly string _filePath;
+        private readonly IFormatter _formatter;
 
-        public LogLive(string filePath)
+        
+        public LogLive(string filePath) : this(filePath, new JsonFormatter()) { }
+
+        public LogLive(string filePath, IFormatter formatter)
         {
-            _filePath = filePath;
+            _formatter = formatter;
+            _filePath = Path.ChangeExtension(filePath, formatter.FileExtension);
 
             string? directory = Path.GetDirectoryName(_filePath);
             if (!string.IsNullOrEmpty(directory))
@@ -23,11 +23,7 @@ namespace EasyLog
 
         public void WriteLog(LogModel logModel)
         {
-            JsonSerializerOptions options = new JsonSerializerOptions();
-            options.WriteIndented = true;
-            options.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
-
-            string text = JsonSerializer.Serialize(logModel, options);
+            string text = _formatter.Serialize(logModel);
             File.WriteAllText(_filePath, text);
         }
     }
