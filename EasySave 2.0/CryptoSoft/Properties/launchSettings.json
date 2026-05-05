@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "CryptoSoft": {
+      "commandName": "Project",
+      "commandLineArgs": "source  C:\\Users\\jsantilario\\source\\repos\\CryptoSoft\\titi.txt destination C:\\Users\\jsantilario\\source\\repos\\CryptoSoft\\titi_c.txt"
+    }
+  }
+}
