@@ -70,7 +70,7 @@ namespace EasySave.Services
                     state.currentSourceFile = filePath;
                     state.currentDestinationFile = destPath;
 
-                    SaveServices.CopyFile(filePath, destPath);
+                    SaveServices.CopyOrEncrypt(filePath, destPath);
 
                     _filesCopied++;
                     _bytesCopied += fileSize;
