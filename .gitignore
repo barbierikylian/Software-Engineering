@@ -5,6 +5,4 @@
 *.suo
 *.sln.docstates
 
-*.exe
 *.pdb
-*.dll
