@@ -54,7 +54,7 @@ namespace EasySave.Service
 
         public void DeleteJob(Backup job)
         {
-            var item = Jobs.Find(j => j.Name == job.Name);
+            Backup item = Jobs.Find(j => j.Name == job.Name);
             if (item != null)
             {
                 Jobs.Remove(item);

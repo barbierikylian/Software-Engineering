@@ -11,7 +11,7 @@ namespace EasySave.Services
 
             string[] softwareToBlock = businessSoftware.Split(';');
 
-            var runningProcesses = Process.GetProcesses();
+            Process[] runningProcesses = Process.GetProcesses();
 
             foreach (string software in softwareToBlock)
             {

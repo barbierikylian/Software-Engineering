@@ -52,5 +52,7 @@
   "label_logs_title": "Log Files",
   "label_log_format": "Log Format",
   "label_log_location": "Log Location",
-  "label_data_location": "Data Location"
+  "label_data_location": "Data Location",
+  "type_full": "Full",
+  "type_diff": "Differential"
 }

@@ -33,7 +33,7 @@ namespace EasyLog
                 }
                 else
                 {
-                    var lines = File.ReadAllLines(fullPath).ToList();
+                    List<string> lines = File.ReadAllLines(fullPath).ToList();
                     if (lines.Count > 0 && lines.Last().Contains("</Logs>"))
                     {
                         lines.RemoveAt(lines.Count - 1);

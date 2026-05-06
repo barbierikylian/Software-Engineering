@@ -60,6 +60,8 @@ namespace EasySaveGUI
                 ColTarget.Header = _langVM.GetString("label_dest");
                 ColType.Header = _langVM.GetString("label_type");
                 LblPermanentHint.Text = _langVM.GetString("hint_ctrl_click");
+                CbiTypeFull.Content = _langVM.GetString("type_full");
+                CbiTypeDiff.Content = _langVM.GetString("type_diff");
             }
             catch { }
         }
@@ -242,7 +244,9 @@ namespace EasySaveGUI
             }
 
             string name = TxtName.Text.Trim();
-            _saveVM.CreateJob(name, TxtSource.Text.Trim(), TxtTarget.Text.Trim(), CmbType.Text);
+            string selectedType = ((ComboBoxItem)CmbType.SelectedItem).Tag.ToString();
+
+            _saveVM.CreateJob(name, TxtSource.Text.Trim(), TxtTarget.Text.Trim(), selectedType);
             RefreshGrid();
             ShowFormSuccess(_langVM.GetString("success_create")?.Replace("{name}", name));
             TxtName.Clear();
@@ -258,13 +262,13 @@ namespace EasySaveGUI
                 return;
             }
 
-            var selectedJobs = new System.Collections.Generic.List<Backup>();
-            foreach (var item in GridJobs.SelectedItems)
+            System.Collections.Generic.List<Backup> selectedJobs = new System.Collections.Generic.List<Backup>();
+            foreach (object item in GridJobs.SelectedItems)
             {
                 if (item is Backup job) selectedJobs.Add(job);
             }
 
-            foreach (var job in selectedJobs)
+            foreach (Backup job in selectedJobs)
             {
                 _saveVM.DeleteJob(job.Name);
             }
@@ -281,13 +285,13 @@ namespace EasySaveGUI
                 return;
             }
 
-            var selectedJobs = new System.Collections.Generic.List<Backup>();
-            foreach (var item in GridJobs.SelectedItems)
+            System.Collections.Generic.List<Backup> selectedJobs = new System.Collections.Generic.List<Backup>();
+            foreach (object item in GridJobs.SelectedItems)
             {
                 if (item is Backup job) selectedJobs.Add(job);
             }
 
-            var progress = new Progress<int>(p => ProgBar.Value = p);
+            Progress<int> progress = new Progress<int>(p => ProgBar.Value = p);
             Action<string> updateText = text =>
                 Application.Current.Dispatcher.Invoke(() => SetCurrentFileLabel(text));
 
@@ -296,9 +300,9 @@ namespace EasySaveGUI
 
             try
             {
-                var errorMessages = new System.Collections.Generic.List<string>();
+                System.Collections.Generic.List<string> errorMessages = new System.Collections.Generic.List<string>();
 
-                foreach (var job in selectedJobs)
+                foreach (Backup job in selectedJobs)
                 {
                     ShowExecRunning(_langVM.GetString("executing_single")?.Replace("{name}", job.Name));
 
@@ -339,7 +343,7 @@ namespace EasySaveGUI
                 return;
             }
 
-            var progress = new Progress<int>(p => ProgBar.Value = p);
+            Progress<int> progress = new Progress<int>(p => ProgBar.Value = p);
             Action<string> updateText = text =>
                 Application.Current.Dispatcher.Invoke(() => SetCurrentFileLabel(text));
 

@@ -406,10 +406,10 @@
                                FontSize="11" FontFamily="Consolas" Margin="2,0,0,10" Visibility="Collapsed"/>
 
                     <TextBlock x:Name="LblType" Text="Backup Type"
-                               Foreground="{StaticResource TextSecondary}" FontSize="12" Margin="0,0,0,4"/>
+           Foreground="{StaticResource TextSecondary}" FontSize="12" Margin="0,0,0,4"/>
                     <ComboBox x:Name="CmbType" SelectedIndex="0" Margin="0,0,0,24">
-                        <ComboBoxItem Content="Full"/>
-                        <ComboBoxItem Content="Differential"/>
+                        <ComboBoxItem x:Name="CbiTypeFull" Content="Full" Tag="Full"/>
+                        <ComboBoxItem x:Name="CbiTypeDiff" Content="Differential" Tag="Differential"/>
                     </ComboBox>
 
                     <Button x:Name="BtnAdd" Content="Create Backup Job"
@@ -536,7 +536,7 @@
                        Foreground="{StaticResource TextPrimary}"
                        Margin="0,0,0,12" Grid.Row="0"/>
 
-            <TextBlock x:Name="LblPermanentHint" Text="Hint: Hold Ctrl to select multiple jobs"
+            <TextBlock x:Name="LblPermanentHint" Text="Use Ctrl+Click or Shift+Click to select multiple jobs."
            Foreground="{StaticResource TextSecondary}" FontStyle="Italic" FontSize="12"
            Margin="0,0,0,12" Grid.Row="1" VerticalAlignment="Top"/>
 
