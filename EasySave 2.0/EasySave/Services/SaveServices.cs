@@ -7,20 +7,15 @@ namespace EasySave.Services
 {
     public static class SaveServices
     {
-        private static readonly string[] EncryptedExtensions = { ".txt", ".json", ".xml" };
-
         private static string GetCryptoSoftPath()
         {
             string currentPath = AppDomain.CurrentDomain.BaseDirectory;
             DirectoryInfo directory = new DirectoryInfo(currentPath);
-
             while (directory != null && !directory.GetDirectories("CryptoSoft").Any())
             {
                 directory = directory.Parent;
             }
-
             if (directory == null) return null;
-
             return Path.Combine(directory.FullName, "CryptoSoft", "CryptoSoft.exe");
         }
 
@@ -31,7 +26,7 @@ namespace EasySave.Services
             return Process.GetProcessesByName(name).Length > 0;
         }
 
-        public static long CopyOrEncrypt(string sourceFile, string destinationFile, string businessSoftware, Action<string> logInterruption)
+        public static long CopyOrEncrypt(string sourceFile, string destinationFile, string businessSoftware, string encryptedExtensions, Action<string> logInterruption)
         {
             if (IsBusinessSoftwareRunning(businessSoftware))
             {
@@ -39,32 +34,34 @@ namespace EasySave.Services
                 throw new OperationCanceledException("BUSINESS_SOFT_DETECTED");
             }
 
+            string[] extensions = (encryptedExtensions ?? "")
+                .Split(';')
+                .Select(e => e.Trim().ToLower())
+                .Where(e => !string.IsNullOrEmpty(e))
+                .Select(e => e.StartsWith(".") ? e : "." + e)
+                .ToArray();
+
             string destDirectory = Path.GetDirectoryName(destinationFile);
-            if (!Directory.Exists(destDirectory))
-            {
-                Directory.CreateDirectory(destDirectory);
-            }
+            if (!Directory.Exists(destDirectory)) Directory.CreateDirectory(destDirectory);
 
             string extension = Path.GetExtension(sourceFile).ToLower();
 
-            if (Array.Exists(EncryptedExtensions, ext => ext == extension))
+            File.Copy(sourceFile, destinationFile, true);
+
+            if (extensions.Contains(extension))
             {
-                return LaunchCryptoSoft(sourceFile, destinationFile);
+                return LaunchCryptoSoft(destinationFile, destinationFile);
             }
-            else
-            {
-                File.Copy(sourceFile, destinationFile, true);
-                return 0;
-            }
+
+            return 0;
         }
 
         private static long LaunchCryptoSoft(string source, string destination)
         {
             string cryptoPath = GetCryptoSoftPath();
-
             if (string.IsNullOrEmpty(cryptoPath) || !File.Exists(cryptoPath))
             {
-                throw new FileNotFoundException($"FATAL ERROR: CryptoSoft.exe not found. Path: {cryptoPath}");
+                throw new FileNotFoundException($"FATAL ERROR: CryptoSoft.exe not found.");
             }
 
             ProcessStartInfo startInfo = new ProcessStartInfo
@@ -80,14 +77,8 @@ namespace EasySave.Services
                 using (Process process = Process.Start(startInfo))
                 {
                     if (process == null) throw new Exception("Encryption engine failed to start.");
-
                     process.WaitForExit();
-
-                    if (process.ExitCode < 0)
-                    {
-                        throw new Exception($"CryptoSoft internal error (Code: {process.ExitCode})");
-                    }
-
+                    if (process.ExitCode < 0) throw new Exception($"CryptoSoft internal error (Code: {process.ExitCode})");
                     return process.ExitCode;
                 }
             }
@@ -97,9 +88,6 @@ namespace EasySave.Services
             }
         }
 
-        public static string ConvertToUNC(string path)
-        {
-            return Path.GetFullPath(path);
-        }
+        public static string ConvertToUNC(string path) => Path.GetFullPath(path);
     }
 }

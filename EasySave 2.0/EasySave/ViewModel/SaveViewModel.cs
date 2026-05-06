@@ -33,7 +33,7 @@ namespace EasySave.ViewModel
 
         public List<Backup> GetAllJobs() => backupService.GetAllJobs();
 
-        public string PerformJobs(string sequence, string businessSoftware, IProgress<int> progress = null, Action<string> currentFileCallback = null)
+        public string PerformJobs(string sequence, string businessSoftware, string encryptedExtensions, IProgress<int> progress = null, Action<string> currentFileCallback = null)
         {
             if (BusinessSoftwareDetector.IsRunning(businessSoftware))
             {
@@ -45,7 +45,7 @@ namespace EasySave.ViewModel
 
             if (jobToRun != null)
             {
-                return backupService.PerformJobs(jobToRun, businessSoftware, progress, currentFileCallback);
+                return backupService.PerformJobs(jobToRun, businessSoftware, encryptedExtensions, progress, currentFileCallback);
             }
             else if (string.IsNullOrWhiteSpace(sequence))
             {
@@ -53,7 +53,7 @@ namespace EasySave.ViewModel
 
                 foreach (Backup job in jobs)
                 {
-                    string error = backupService.PerformJobs(job, businessSoftware, progress, currentFileCallback);
+                    string error = backupService.PerformJobs(job, businessSoftware, encryptedExtensions, progress, currentFileCallback);
 
                     if (!string.IsNullOrEmpty(error))
                     {

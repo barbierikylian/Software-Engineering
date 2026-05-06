@@ -449,6 +449,16 @@
                             <TextBlock x:Name="LblHintMultipleApps" Text="Separate multiple apps with ;" Foreground="#e3b341" FontSize="11"/>
                         </StackPanel>
                     </Border>
+                    <TextBlock x:Name="LblEncryptedExt" Text="Encrypted Extensions"
+           Foreground="{StaticResource TextSecondary}" FontSize="12" Margin="0,0,0,6"/>
+                    <TextBox x:Name="TxtEncryptedExt" Text=".txt;.pdf" Margin="0,0,0,8"/>
+                    <Border Background="#0f1f3d" BorderBrush="{StaticResource AccentBlue}"
+        BorderThickness="1" CornerRadius="6" Padding="10,7" Margin="0,0,0,24">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="(!) " Foreground="#58a6ff" FontWeight="Bold" FontFamily="Consolas"/>
+                            <TextBlock Text="Example: .txt;.pdf;.doc" Foreground="#58a6ff" FontSize="11"/>
+                        </StackPanel>
+                    </Border>
 
                     <Separator Margin="0,0,0,24"/>
 

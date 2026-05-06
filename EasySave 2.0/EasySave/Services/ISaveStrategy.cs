@@ -1,11 +1,9 @@
-﻿using EasyLog;
-using EasySave.Model;
-using System;
+﻿using EasySave.Model;
 
-namespace EasySave.Service
+namespace EasySave.Services
 {
     public interface ISaveStrategy
     {
-        string Save(Backup job, string businessSoftware, ILogStrategy logger, IFormatter formatter, IProgress<int> progress = null, Action<string> currentFileCallback = null);
+        string Save(Backup job, string businessSoftware, string encryptedExtensions, EasyLog.ILogStrategy logger, EasyLog.IFormatter formatter, System.IProgress<int> progress = null, System.Action<string> currentFileCallback = null);
     }
 }

@@ -27,7 +27,7 @@ namespace EasySave.Service
 
         public void SetLogFormat(string format) => _currentLogFormat = format.ToLower();
 
-        public string PerformJobs(Backup job, string businessSoftware, IProgress<int> progress = null, Action<string> currentFileCallback = null)
+        public string PerformJobs(Backup job, string businessSoftware, string encryptedExtensions, IProgress<int> progress = null, Action<string> currentFileCallback = null)
         {
             if (!Directory.Exists(job.FileSource))
                 return $"Source directory not found: {job.FileSource}";
@@ -43,7 +43,7 @@ namespace EasySave.Service
                 ? new SaveDifferential()
                 : new SaveComplete();
 
-            return strategy.Save(job, businessSoftware, liveLogger, formatter, progress, currentFileCallback);
+            return strategy.Save(job, businessSoftware, encryptedExtensions, liveLogger, formatter, progress, currentFileCallback);
         }
 
         public void CreateJob(Backup job)

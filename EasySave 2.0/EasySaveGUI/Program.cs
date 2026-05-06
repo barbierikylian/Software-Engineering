@@ -48,7 +48,7 @@ namespace EasySaveGUI
                         if (index >= 0 && index < allJobsList.Count)
                         {
                             string targetName = allJobsList[index].Name;
-                            saveViewModel.PerformJobs(targetName, "");
+                            saveViewModel.PerformJobs(targetName, "", "");
                         }
                     }
                 }

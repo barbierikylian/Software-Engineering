@@ -15,7 +15,7 @@ namespace EasyLog
         public DateTime? time { get; set; }
         public long? fileSize { get; set; }
         public double? fileTransferTime { get; set; }
-        public long encryptionTime { get; set; }
+        public long? encryptionTime { get; set; }
 
         // For Live
         public string? state { get; set; }

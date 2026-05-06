@@ -302,6 +302,7 @@ namespace EasySaveGUI
                 Application.Current.Dispatcher.Invoke(() => SetCurrentFileLabel(text));
 
             string businessSoft = TxtBusinessSoft.Text.Trim();
+            string encryptedExt = TxtEncryptedExt.Text.Trim();
             SetButtonsEnabled(false);
 
             try
@@ -312,7 +313,7 @@ namespace EasySaveGUI
                 {
                     ShowExecRunning(_langVM.GetString("executing_single")?.Replace("{name}", job.Name));
 
-                    string error = await Task.Run(() => _saveVM.PerformJobs(job.Name, businessSoft, progress, updateText));
+                    string error = await Task.Run(() => _saveVM.PerformJobs(job.Name, businessSoft, encryptedExt, progress, updateText));
 
                     if (!string.IsNullOrEmpty(error))
                     {
@@ -366,10 +367,11 @@ namespace EasySaveGUI
             SetButtonsEnabled(false);
 
             string businessSoft = TxtBusinessSoft.Text.Trim();
+            string encryptedExt = TxtEncryptedExt.Text.Trim();
 
             try
             {
-                string error = await Task.Run(() => _saveVM.PerformJobs("", businessSoft, progress, updateText));
+                string error = await Task.Run(() => _saveVM.PerformJobs("", businessSoft, encryptedExt, progress, updateText));
 
                 if (string.IsNullOrEmpty(error))
                 {
