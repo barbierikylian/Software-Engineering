@@ -368,23 +368,37 @@
                                Margin="0,0,0,16"/>
 
                     <Border x:Name="BannerError"
-                            Background="#2d1515" BorderBrush="{StaticResource AccentRed}"
-                            BorderThickness="1" CornerRadius="6"
-                            Padding="12,9" Margin="0,0,0,12" Visibility="Collapsed">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="[!] " Foreground="{StaticResource AccentRed}" FontWeight="Bold" FontFamily="Consolas"/>
-                            <TextBlock x:Name="TxtBannerError" Foreground="#ffa198" TextWrapping="Wrap"/>
-                        </StackPanel>
+        Background="#2d1515" BorderBrush="{StaticResource AccentRed}"
+        BorderThickness="1" CornerRadius="6"
+        Padding="12,9" Margin="0,0,0,12" Visibility="Collapsed">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Grid.Column="0" Text="[!] " Foreground="{StaticResource AccentRed}" FontWeight="Bold" FontFamily="Consolas" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="1" x:Name="TxtBannerError" Foreground="#ffa198" TextWrapping="Wrap" VerticalAlignment="Center" Margin="5,0,10,0"/>
+                            <TextBlock Grid.Column="2" Text="✕" Foreground="{StaticResource AccentRed}" FontSize="14" FontWeight="Bold" Cursor="Hand" VerticalAlignment="Center" MouseLeftButtonUp="CloseBanners_Click" ToolTip="Fermer"/>
+                        </Grid>
                     </Border>
 
                     <Border x:Name="BannerSuccess"
-                            Background="#0f2a18" BorderBrush="{StaticResource AccentGreen}"
-                            BorderThickness="1" CornerRadius="6"
-                            Padding="12,9" Margin="0,0,0,12" Visibility="Collapsed">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="[OK] " Foreground="{StaticResource AccentGreen}" FontWeight="Bold" FontFamily="Consolas"/>
-                            <TextBlock x:Name="TxtBannerSuccess" Foreground="#56d364" TextWrapping="Wrap"/>
-                        </StackPanel>
+        Background="#0f2a18" BorderBrush="{StaticResource AccentGreen}"
+        BorderThickness="1" CornerRadius="6"
+        Padding="12,9" Margin="0,0,0,12" Visibility="Collapsed">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Grid.Column="0" Text="[OK] " Foreground="{StaticResource AccentGreen}" FontWeight="Bold" FontFamily="Consolas" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="1" x:Name="TxtBannerSuccess" Foreground="#56d364" TextWrapping="Wrap" VerticalAlignment="Center" Margin="5,0,10,0"/>
+                            <TextBlock Grid.Column="2" Text="✕" Foreground="{StaticResource AccentGreen}" FontSize="14" FontWeight="Bold" Cursor="Hand" VerticalAlignment="Center" MouseLeftButtonUp="CloseBanners_Click" ToolTip="Fermer"/>
+                        </Grid>
                     </Border>
 
                     <TextBlock x:Name="LblName" Text="Job Name"
@@ -478,7 +492,7 @@
                    Grid.Column="0"
                    Foreground="#58a6ff" FontSize="11" FontFamily="Consolas"
                    TextTrimming="CharacterEllipsis"
-                   VerticalAlignment="Center"/>
+                   VerticalAlignment="Center"></TextBlock>
                             <Border Grid.Column="1"
                 Background="Transparent" BorderBrush="#58a6ff"
                 BorderThickness="1" CornerRadius="5"
@@ -542,44 +556,71 @@
 
             <StackPanel Grid.Row="1" Margin="0,0,0,12">
 
-                <Border x:Name="BannerExecError"
-                        Background="#2d1515" BorderBrush="{StaticResource AccentRed}"
-                        BorderThickness="1" CornerRadius="6"
-                        Padding="12,9" Margin="0,0,0,8" Visibility="Collapsed">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="[!] " Foreground="{StaticResource AccentRed}" FontWeight="Bold" FontFamily="Consolas"/>
-                        <TextBlock x:Name="TxtBannerExecError" Foreground="#ffa198" TextWrapping="Wrap"/>
-                    </StackPanel>
-                </Border>
+            <Border x:Name="BannerExecError"
+        Background="#2d1515" BorderBrush="{StaticResource AccentRed}"
+        BorderThickness="1" CornerRadius="6"
+        Padding="12,9" Margin="0,0,0,8" Visibility="Collapsed">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Column="0" Text="[!] " Foreground="{StaticResource AccentRed}" FontWeight="Bold" FontFamily="Consolas" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Column="1" x:Name="TxtBannerExecError" Foreground="#ffa198" TextWrapping="Wrap" VerticalAlignment="Center" Margin="5,0,10,0"/>
+                    <TextBlock Grid.Column="2" Text="✕" Foreground="{StaticResource AccentRed}" FontSize="14" FontWeight="Bold" Cursor="Hand" VerticalAlignment="Center" MouseLeftButtonUp="CloseBanners_Click" ToolTip="Fermer"/>
+                </Grid>
+            </Border>
 
                 <Border x:Name="BannerRunning"
-                        Background="#0f1f3d" BorderBrush="{StaticResource AccentBlue}"
-                        BorderThickness="1" CornerRadius="6"
-                        Padding="12,9" Margin="0,0,0,8" Visibility="Collapsed">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="&gt;&gt;&gt; " Foreground="#58a6ff" FontWeight="Bold" FontFamily="Consolas"/>
-                        <TextBlock x:Name="TxtBannerRunning" Foreground="#58a6ff" TextWrapping="Wrap"/>
-                    </StackPanel>
+                    Background="#0f1f3d" BorderBrush="{StaticResource AccentBlue}"
+                    BorderThickness="1" CornerRadius="6"
+                    Padding="12,9" Margin="0,0,0,8" Visibility="Collapsed">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Column="0" Text="&gt;&gt;&gt; " Foreground="#58a6ff" FontWeight="Bold" FontFamily="Consolas" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="1" x:Name="TxtBannerRunning" Foreground="#58a6ff" TextWrapping="Wrap" VerticalAlignment="Center" Margin="5,0,10,0"/>
+                    </Grid>
                 </Border>
 
                 <Border x:Name="BannerExecSuccess"
-                        Background="#0f2a18" BorderBrush="{StaticResource AccentGreen}"
-                        BorderThickness="1" CornerRadius="6"
-                        Padding="12,9" Margin="0,0,0,8" Visibility="Collapsed">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="[OK] " Foreground="{StaticResource AccentGreen}" FontWeight="Bold" FontFamily="Consolas"/>
-                        <TextBlock x:Name="TxtBannerExecSuccess" Foreground="#56d364" TextWrapping="Wrap"/>
-                    </StackPanel>
-                </Border>
+        Background="#0f2a18" BorderBrush="{StaticResource AccentGreen}"
+        BorderThickness="1" CornerRadius="6"
+        Padding="12,9" Margin="0,0,0,8" Visibility="Collapsed">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Column="0" Text="[OK] " Foreground="{StaticResource AccentGreen}" FontWeight="Bold" FontFamily="Consolas" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Column="1" x:Name="TxtBannerExecSuccess" Foreground="#56d364" TextWrapping="Wrap" VerticalAlignment="Center" Margin="5,0,10,0"/>
+                    <TextBlock Grid.Column="2" Text="✕" Foreground="{StaticResource AccentGreen}" FontSize="14" FontWeight="Bold" Cursor="Hand" VerticalAlignment="Center" MouseLeftButtonUp="CloseBanners_Click" ToolTip="Fermer"/>
+                </Grid>
+            </Border>
 
                 <Border x:Name="BannerHint"
-                        Background="#1c1a0e" BorderBrush="{StaticResource AccentYellow}"
-                        BorderThickness="1" CornerRadius="6"
-                        Padding="12,9" Visibility="Collapsed">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="(!) " Foreground="{StaticResource AccentYellow}" FontWeight="Bold" FontFamily="Consolas"/>
-                        <TextBlock x:Name="TxtBannerHint" Foreground="#e3b341" TextWrapping="Wrap"/>
-                    </StackPanel>
+                    Background="#1c1a0e" BorderBrush="{StaticResource AccentYellow}"
+                    BorderThickness="1" CornerRadius="6"
+                    Padding="12,9" Visibility="Collapsed">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Column="0" Text="(!) " Foreground="{StaticResource AccentYellow}" FontWeight="Bold" FontFamily="Consolas" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="1" x:Name="TxtBannerHint" Foreground="#e3b341" TextWrapping="Wrap" VerticalAlignment="Center" Margin="5,0,10,0"/>
+                        <TextBlock Grid.Column="2" Text="✕" Foreground="{StaticResource AccentYellow}" FontSize="14" FontWeight="Bold" Cursor="Hand" VerticalAlignment="Center" MouseLeftButtonUp="CloseBanners_Click" ToolTip="Fermer"/>
+                    </Grid>
                 </Border>
 
             </StackPanel>

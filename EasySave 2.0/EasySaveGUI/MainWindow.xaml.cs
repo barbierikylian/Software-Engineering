@@ -109,6 +109,12 @@ namespace EasySaveGUI
             Process.Start("explorer.exe", path);
         }
 
+        private void CloseBanners_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            ClearExecBanners();
+            ClearFormBanners();
+        }
+
         private void ClearFormBanners()
         {
             BannerError.Visibility = Visibility.Collapsed;
@@ -310,7 +316,16 @@ namespace EasySaveGUI
 
                     if (!string.IsNullOrEmpty(error))
                     {
-                        errorMessages.Add($"[{job.Name}] {error}");
+                        if (error.Contains("Business software") || error.Contains("currently running"))
+                        {
+                            string tradError = _langVM.GetString("error_business_soft")?.Replace("{0}", businessSoft)
+                                               ?? $"Business software ({businessSoft}) is currently running. Backup blocked.";
+                            errorMessages.Add($"[{job.Name}] {tradError}");
+                        }
+                        else
+                        {
+                            errorMessages.Add($"[{job.Name}] {error}");
+                        }
                     }
                 }
 
@@ -357,9 +372,22 @@ namespace EasySaveGUI
                 string error = await Task.Run(() => _saveVM.PerformJobs("", businessSoft, progress, updateText));
 
                 if (string.IsNullOrEmpty(error))
+                {
                     ShowExecSuccess(_langVM.GetString("success_execute_all"));
+                }
                 else
-                    ShowExecError(error);
+                {
+                    if (error.Contains("Business software") || error.Contains("currently running"))
+                    {
+                        string tradError = _langVM.GetString("error_business_soft")?.Replace("{0}", businessSoft)
+                                           ?? $"Business software ({businessSoft}) is currently running. Backup blocked.";
+                        ShowExecError(tradError);
+                    }
+                    else
+                    {
+                        ShowExecError(error);
+                    }
+                }
             }
             catch (Exception ex)
             {

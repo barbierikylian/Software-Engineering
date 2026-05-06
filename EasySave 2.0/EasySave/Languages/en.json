@@ -54,5 +54,6 @@
   "label_log_location": "Log Location",
   "label_data_location": "Data Location",
   "type_full": "Full",
-  "type_diff": "Differential"
+  "type_diff": "Differential",
+  "error_business_soft": "Error: Business software ({0}) is currently running. Backup blocked."
 }

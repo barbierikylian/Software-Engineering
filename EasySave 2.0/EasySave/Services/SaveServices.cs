@@ -24,8 +24,21 @@ namespace EasySave.Services
             return Path.Combine(directory.FullName, "CryptoSoft", "CryptoSoft.exe");
         }
 
-        public static long CopyOrEncrypt(string sourceFile, string destinationFile)
+        private static bool IsBusinessSoftwareRunning(string processName)
         {
+            if (string.IsNullOrWhiteSpace(processName)) return false;
+            string name = processName.EndsWith(".exe") ? Path.GetFileNameWithoutExtension(processName) : processName;
+            return Process.GetProcessesByName(name).Length > 0;
+        }
+
+        public static long CopyOrEncrypt(string sourceFile, string destinationFile, string businessSoftware, Action<string> logInterruption)
+        {
+            if (IsBusinessSoftwareRunning(businessSoftware))
+            {
+                logInterruption?.Invoke(businessSoftware);
+                throw new OperationCanceledException("BUSINESS_SOFT_DETECTED");
+            }
+
             string destDirectory = Path.GetDirectoryName(destinationFile);
             if (!Directory.Exists(destDirectory))
             {
@@ -57,7 +70,7 @@ namespace EasySave.Services
             ProcessStartInfo startInfo = new ProcessStartInfo
             {
                 FileName = cryptoPath,
-                Arguments = $"source \"{source}\" destination \"{destination}\"",
+                Arguments = $"\"{source}\" \"{destination}\"",
                 UseShellExecute = false,
                 CreateNoWindow = true
             };
@@ -80,7 +93,7 @@ namespace EasySave.Services
             }
             catch (Exception ex)
             {
-                throw new Exception("Encryption failed, backup aborted: " + ex.Message);
+                throw new Exception("Encryption failed: " + ex.Message);
             }
         }
 
@@ -89,4 +102,4 @@ namespace EasySave.Services
             return Path.GetFullPath(path);
         }
     }
-}   
+}

@@ -28,19 +28,15 @@ namespace EasySave.Services
                 {
                     name = job.Name,
                     state = "Active",
-                    totalFilesToCopy = Directory.GetFiles(source, "*", SearchOption.AllDirectories).Length
+                    totalFilesToCopy = Directory.GetFiles(source, "*", SearchOption.AllDirectories).Length,
+                    totalFilesSize = 0 // Should be pre-calculated for accurate progression
                 };
 
                 Stopwatch timer = Stopwatch.StartNew();
-
                 string recursiveError = CopyDirectoryRecursive(source, target, businessSoftware, state, logger, progress, currentFileCallback);
-
                 timer.Stop();
 
-                if (recursiveError != null)
-                {
-                    return recursiveError;
-                }
+                if (recursiveError != null) return recursiveError;
 
                 LogModel dailyLog = new LogModel
                 {
@@ -75,13 +71,6 @@ namespace EasySave.Services
 
             foreach (string filePath in Directory.GetFiles(src))
             {
-                if (BusinessSoftwareDetector.IsRunning(businessSoftware))
-                {
-                    state.state = "Stopped - Business Software Detected";
-                    logger.WriteLog(state);
-                    return $"Backup stopped: Business software ({businessSoftware}) detected.";
-                }
-
                 string destPath = Path.Combine(trg, Path.GetFileName(filePath));
 
                 if (ShouldCopy(filePath, destPath))
@@ -92,29 +81,37 @@ namespace EasySave.Services
                     state.currentSourceFile = filePath;
                     state.currentDestinationFile = destPath;
 
-                    SaveServices.CopyOrEncrypt(filePath, destPath);
+                    try
+                    {
+                        long encryptionTime = SaveServices.CopyOrEncrypt(filePath, destPath, businessSoftware, (softName) =>
+                        {
+                            state.state = "Stopped - Business Software Detected";
+                            logger.WriteLog(state);
+                        });
 
-                    _filesCopied++;
-                    _bytesCopied += fileSize;
+                        _filesCopied++;
+                        _bytesCopied += fileSize;
+                        state.nbFilesLeftToDo = state.totalFilesToCopy - _filesCopied;
 
-                    state.nbFilesLeftToDo = state.totalFilesToCopy - _filesCopied;
+                        if (state.totalFilesSize > 0)
+                            state.progression = (int)((_bytesCopied * 100) / state.totalFilesSize);
 
-                    if (state.totalFilesSize > 0)
-                        state.progression = (int)((_bytesCopied * 100) / state.totalFilesSize);
+                        logger.WriteLog(state);
+                        progress?.Report(state.progression ?? 0);
 
-                    logger.WriteLog(state);
-
-                    progress?.Report(state.progression ?? 0);
-
-                    string actionType = isNewFile ? "Added" : "Updated";
-                    currentFileCallback?.Invoke($"{actionType}: {Path.GetFileName(filePath)} ({state.progression ?? 0}%)");
+                        string actionType = isNewFile ? "Added" : "Updated";
+                        currentFileCallback?.Invoke($"{actionType}: {Path.GetFileName(filePath)} ({state.progression ?? 0}%)");
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        return $"Backup stopped: Business software ({businessSoftware}) detected.";
+                    }
                 }
             }
 
             foreach (string dirPath in Directory.GetDirectories(src))
             {
                 string error = CopyDirectoryRecursive(dirPath, Path.Combine(trg, Path.GetFileName(dirPath)), businessSoftware, state, logger, progress, currentFileCallback);
-
                 if (error != null) return error;
             }
 
