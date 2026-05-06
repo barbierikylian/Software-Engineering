@@ -62,6 +62,7 @@ namespace EasySaveGUI
                 LblPermanentHint.Text = _langVM.GetString("hint_ctrl_click");
                 CbiTypeFull.Content = _langVM.GetString("type_full");
                 CbiTypeDiff.Content = _langVM.GetString("type_diff");
+                LblEncryptedExt.Text = _langVM.GetString("label_encrypted_ext"); 
             }
             catch { }
         }

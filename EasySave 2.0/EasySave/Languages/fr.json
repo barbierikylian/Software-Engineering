@@ -55,5 +55,6 @@
   "label_data_location": "Emplacement des données",
   "type_full": "Complète",
   "type_diff": "Différentielle",
-  "error_business_soft": "Erreur : Le logiciel métier ({0}) est en cours d'exécution. Sauvegarde bloquée."
+  "error_business_soft": "Erreur : Le logiciel métier ({0}) est en cours d'exécution. Sauvegarde bloquée.",
+  "label_encrypted_ext": "Extensions cryptés"
 }
