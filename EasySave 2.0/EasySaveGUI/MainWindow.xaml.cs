@@ -4,6 +4,7 @@ using Microsoft.VisualBasic;
 using System;
 using System.Data;
 using System.Diagnostics;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
@@ -58,6 +59,7 @@ namespace EasySaveGUI
                 ColSource.Header = _langVM.GetString("label_source");
                 ColTarget.Header = _langVM.GetString("label_dest");
                 ColType.Header = _langVM.GetString("label_type");
+                LblPermanentHint.Text = _langVM.GetString("hint_ctrl_click");
             }
             catch { }
         }
@@ -250,41 +252,72 @@ namespace EasySaveGUI
 
         private void BtnDelete_Click(object sender, RoutedEventArgs e)
         {
-            if (GridJobs.SelectedItem is not Backup selectedJob)
+            if (GridJobs.SelectedItems.Count == 0)
             {
                 ShowExecError(_langVM.GetString("error_select_job"));
                 return;
             }
-            _saveVM.DeleteJob(selectedJob.Name);
+
+            var selectedJobs = new System.Collections.Generic.List<Backup>();
+            foreach (var item in GridJobs.SelectedItems)
+            {
+                if (item is Backup job) selectedJobs.Add(job);
+            }
+
+            foreach (var job in selectedJobs)
+            {
+                _saveVM.DeleteJob(job.Name);
+            }
+
             RefreshGrid();
-            ShowExecSuccess(_langVM.GetString("success_delete")?.Replace("{name}", selectedJob.Name));
+            ShowExecSuccess(_langVM.GetString("success_delete")?.Replace("{name}", $"{selectedJobs.Count} job(s)"));
         }
 
         private async void BtnExecute_Click(object sender, RoutedEventArgs e)
         {
-            if (GridJobs.SelectedItem is not Backup selectedJob)
+            if (GridJobs.SelectedItems.Count == 0)
             {
                 ShowHintBanner();
                 return;
+            }
+
+            var selectedJobs = new System.Collections.Generic.List<Backup>();
+            foreach (var item in GridJobs.SelectedItems)
+            {
+                if (item is Backup job) selectedJobs.Add(job);
             }
 
             var progress = new Progress<int>(p => ProgBar.Value = p);
             Action<string> updateText = text =>
                 Application.Current.Dispatcher.Invoke(() => SetCurrentFileLabel(text));
 
-            ShowExecRunning(_langVM.GetString("executing_single")?.Replace("{name}", selectedJob.Name));
-            SetButtonsEnabled(false);
-
             string businessSoft = TxtBusinessSoft.Text.Trim();
+            SetButtonsEnabled(false);
 
             try
             {
-                string error = await Task.Run(() => _saveVM.PerformJobs(selectedJob.Name, businessSoft, progress, updateText));
+                var errorMessages = new System.Collections.Generic.List<string>();
 
-                if (string.IsNullOrEmpty(error))
-                    ShowExecSuccess(_langVM.GetString("execution_finished"));
+                foreach (var job in selectedJobs)
+                {
+                    ShowExecRunning(_langVM.GetString("executing_single")?.Replace("{name}", job.Name));
+
+                    string error = await Task.Run(() => _saveVM.PerformJobs(job.Name, businessSoft, progress, updateText));
+
+                    if (!string.IsNullOrEmpty(error))
+                    {
+                        errorMessages.Add($"[{job.Name}] {error}");
+                    }
+                }
+
+                if (errorMessages.Count > 0)
+                {
+                    ShowExecError(string.Join("\n", errorMessages));
+                }
                 else
-                    ShowExecError(error);
+                {
+                    ShowExecSuccess(_langVM.GetString("execution_finished"));
+                }
             }
             catch (Exception ex)
             {

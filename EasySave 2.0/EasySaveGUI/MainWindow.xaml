@@ -426,7 +426,7 @@
 
                     <TextBlock x:Name="LblBusinessSoft" Text="Business Software (Blocker)"
                                Foreground="{StaticResource TextSecondary}" FontSize="12" Margin="0,0,0,6"/>
-                    <TextBox x:Name="TxtBusinessSoft" Text="calculator" Margin="0,0,0,8"/>
+                    <TextBox x:Name="TxtBusinessSoft" Text="CalculatorApp" Margin="0,0,0,8"/>
 
                     <Border Background="#1c1a0e" BorderBrush="{StaticResource AccentYellow}"
                             BorderThickness="1" CornerRadius="6" Padding="10,7" Margin="0,0,0,24">
@@ -535,6 +535,10 @@
                        FontSize="22" FontWeight="Bold"
                        Foreground="{StaticResource TextPrimary}"
                        Margin="0,0,0,12" Grid.Row="0"/>
+
+            <TextBlock x:Name="LblPermanentHint" Text="Hint: Hold Ctrl to select multiple jobs"
+           Foreground="{StaticResource TextSecondary}" FontStyle="Italic" FontSize="12"
+           Margin="0,0,0,12" Grid.Row="1" VerticalAlignment="Top"/>
 
             <StackPanel Grid.Row="1" Margin="0,0,0,12">
 

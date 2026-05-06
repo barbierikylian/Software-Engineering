@@ -1,17 +1,30 @@
 ﻿using System.Diagnostics;
+using System.Linq;
 
 namespace EasySave.Services
 {
     public static class BusinessSoftwareDetector
     {
-        public static bool IsRunning(string processName)
+        public static bool IsRunning(string businessSoftware)
         {
-            if (string.IsNullOrWhiteSpace(processName)) return false;
+            if (string.IsNullOrWhiteSpace(businessSoftware)) return false;
 
-            string cleanName = processName.ToLower().Replace(".exe", "");
+            string[] softwareToBlock = businessSoftware.Split(';');
 
-            Process[] processes = Process.GetProcessesByName(cleanName);
-            return processes.Length > 0;
+            var runningProcesses = Process.GetProcesses();
+
+            foreach (string software in softwareToBlock)
+            {
+                string cleanName = software.Trim().ToLower();
+                if (string.IsNullOrEmpty(cleanName)) continue;
+
+                if (runningProcesses.Any(p => p.ProcessName.ToLower().Contains(cleanName)))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }
