@@ -2,10 +2,10 @@
 using EasySave.Model;
 using System;
 
-namespace EasySave.Services
+namespace EasySave.Service
 {
     public interface ISaveStrategy
     {
-        void Save(Backup job, LogModel state, ILogStrategy logger, IFormatter formatter, IProgress<int> progress = null, Action<string> currentFileCallback = null);
+        string Save(Backup job, string businessSoftware, ILogStrategy logger, IFormatter formatter, IProgress<int> progress = null, Action<string> currentFileCallback = null);
     }
 }

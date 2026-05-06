@@ -2,44 +2,50 @@
 using System.Collections.Generic;
 using EasySave.Model;
 using EasySave.Service;
+using EasySave.Services;
 
 namespace EasySave.ViewModel
 {
     public class SaveViewModel
     {
-        private BackupService backupservice;
+        private BackupService backupService;
 
         public SaveViewModel()
         {
-            backupservice = new BackupService();
+            backupService = new BackupService();
         }
 
-        public void SetLogFormat(string format) => backupservice.SetLogFormat(format);
+        public void SetLogFormat(string format) => backupService.SetLogFormat(format);
 
-        public bool CanCreateNewJob() => backupservice.CanCreateJob();
+        public bool CanCreateNewJob() => backupService.CanCreateJob();
 
         public void CreateJob(string name, string source, string destination, string type)
         {
             Backup job = new Backup { Name = name, FileSource = source, FileDestination = destination, Type = type };
-            backupservice.CreateJob(job);
+            backupService.CreateJob(job);
         }
 
         public void DeleteJob(string jobName)
         {
-            Backup jobToDelete = backupservice.GetAllJobs().Find(j => j.Name == jobName);
-            if (jobToDelete != null) backupservice.DeleteJob(jobToDelete);
+            Backup jobToDelete = backupService.GetAllJobs().Find(j => j.Name == jobName);
+            if (jobToDelete != null) backupService.DeleteJob(jobToDelete);
         }
 
-        public List<Backup> GetAllJobs() => backupservice.GetAllJobs();
+        public List<Backup> GetAllJobs() => backupService.GetAllJobs();
 
-        public string PerformJobs(string sequence, IProgress<int> progress = null, Action<string> currentFileCallback = null)
+        public string PerformJobs(string sequence, string businessSoftware, IProgress<int> progress = null, Action<string> currentFileCallback = null)
         {
-            List<Backup> jobs = backupservice.GetAllJobs();
+            if (BusinessSoftwareDetector.IsRunning(businessSoftware))
+            {
+                return $"Error: Business software ({businessSoftware}) is currently running. Backup blocked.";
+            }
+
+            List<Backup> jobs = backupService.GetAllJobs();
             Backup jobToRun = jobs.Find(j => j.Name == sequence);
 
             if (jobToRun != null)
             {
-                return backupservice.PerformJobs(jobToRun, progress, currentFileCallback);
+                return backupService.PerformJobs(jobToRun, businessSoftware, progress, currentFileCallback);
             }
             else if (string.IsNullOrWhiteSpace(sequence))
             {
@@ -47,7 +53,7 @@ namespace EasySave.ViewModel
 
                 foreach (Backup job in jobs)
                 {
-                    string error = backupservice.PerformJobs(job, progress, currentFileCallback);
+                    string error = backupService.PerformJobs(job, businessSoftware, progress, currentFileCallback);
 
                     if (!string.IsNullOrEmpty(error))
                     {

@@ -1,13 +1,19 @@
-﻿using System;
+﻿using EasySave.Model;
+using EasySave.ViewModel;
+using Microsoft.VisualBasic;
+using System;
+using System.Data;
 using System.Diagnostics;
 using System.IO;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
+using System.Windows.Markup;
 using System.Windows.Media;
-using EasySave.ViewModel;
-using EasySave.Model;
+using System.Windows.Media.TextFormatting;
+using System.Xml.Linq;
 
 namespace EasySaveGUI
 {
@@ -91,6 +97,7 @@ namespace EasySaveGUI
             if (!Directory.Exists(path)) Directory.CreateDirectory(path);
             Process.Start("explorer.exe", path);
         }
+
         private void OpenDataFolder_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
             string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "EasySave", "data");
@@ -268,9 +275,12 @@ namespace EasySaveGUI
             ShowExecRunning(_langVM.GetString("executing_single")?.Replace("{name}", selectedJob.Name));
             SetButtonsEnabled(false);
 
+            string businessSoft = TxtBusinessSoft.Text.Trim();
+
             try
             {
-                string error = await Task.Run(() => _saveVM.PerformJobs(selectedJob.Name, progress, updateText));
+                string error = await Task.Run(() => _saveVM.PerformJobs(selectedJob.Name, businessSoft, progress, updateText));
+
                 if (string.IsNullOrEmpty(error))
                     ShowExecSuccess(_langVM.GetString("execution_finished"));
                 else
@@ -303,9 +313,12 @@ namespace EasySaveGUI
             ShowExecRunning(_langVM.GetString("executing_all"));
             SetButtonsEnabled(false);
 
+            string businessSoft = TxtBusinessSoft.Text.Trim();
+
             try
             {
-                string error = await Task.Run(() => _saveVM.PerformJobs("", progress, updateText));
+                string error = await Task.Run(() => _saveVM.PerformJobs("", businessSoft, progress, updateText));
+
                 if (string.IsNullOrEmpty(error))
                     ShowExecSuccess(_langVM.GetString("success_execute_all"));
                 else
