@@ -24,6 +24,10 @@ namespace EasySave.Services
                 _filesCopied = 0;
                 _bytesCopied = 0;
 
+                string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+                string logDir = Path.Combine(appData, "EasySave", "logs");
+                ILogStrategy dailyLogger = new LogDaily(logDir, formatter);
+
                 LogModel state = new LogModel
                 {
                     name = job.Name,
@@ -33,7 +37,7 @@ namespace EasySave.Services
                 };
 
                 Stopwatch timer = Stopwatch.StartNew();
-                string recursiveError = CopyDirectoryRecursive(source, target, businessSoftware, state, logger, progress, currentFileCallback);
+                string recursiveError = CopyDirectoryRecursive(source, target, businessSoftware, state, logger, dailyLogger, progress, currentFileCallback);
                 timer.Stop();
 
                 if (recursiveError != null) return recursiveError;
@@ -48,10 +52,6 @@ namespace EasySave.Services
                     time = DateTime.Now
                 };
 
-                string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-                string logDir = Path.Combine(appData, "EasySave", "logs");
-
-                ILogStrategy dailyLogger = new LogDaily(logDir, formatter);
                 dailyLogger.WriteLog(dailyLog);
 
                 progress?.Report(100);
@@ -65,7 +65,7 @@ namespace EasySave.Services
             }
         }
 
-        private string CopyDirectoryRecursive(string src, string trg, string businessSoftware, LogModel state, ILogStrategy logger, IProgress<int> progress, Action<string> currentFileCallback)
+        private string CopyDirectoryRecursive(string src, string trg, string businessSoftware, LogModel state, ILogStrategy logger, ILogStrategy dailyLogger, IProgress<int> progress, Action<string> currentFileCallback)
         {
             if (!Directory.Exists(trg)) Directory.CreateDirectory(trg);
 
@@ -83,6 +83,17 @@ namespace EasySave.Services
                     {
                         state.state = "Stopped - Business Software Detected";
                         logger.WriteLog(state);
+
+                        LogModel stopLog = new LogModel
+                        {
+                            name = state.name,
+                            fileSource = "N/A",
+                            fileDestination = "N/A",
+                            fileSize = 0,
+                            fileTransferTime = -1,
+                            time = DateTime.Now
+                        };
+                        dailyLogger.WriteLog(stopLog);
                     });
 
                     _filesCopied++;
@@ -104,7 +115,7 @@ namespace EasySave.Services
 
             foreach (string dirPath in Directory.GetDirectories(src))
             {
-                string error = CopyDirectoryRecursive(dirPath, Path.Combine(trg, Path.GetFileName(dirPath)), businessSoftware, state, logger, progress, currentFileCallback);
+                string error = CopyDirectoryRecursive(dirPath, Path.Combine(trg, Path.GetFileName(dirPath)), businessSoftware, state, logger, dailyLogger, progress, currentFileCallback);
                 if (error != null) return error;
             }
 
