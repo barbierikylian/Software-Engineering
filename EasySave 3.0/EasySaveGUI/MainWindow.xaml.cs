@@ -1,20 +1,14 @@
 ﻿using EasySave.Model;
 using EasySave.ViewModel;
-using Microsoft.VisualBasic;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Data;
 using System.Diagnostics;
 using System.IO;
-using System.Linq.Expressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Markup;
-using System.Windows.Media.TextFormatting;
-using System.Xml.Linq;
 
 namespace EasySaveGUI
 {
@@ -24,6 +18,8 @@ namespace EasySaveGUI
         private int _progress;
         private string _currentFile;
         private string _status;
+        private string _playPauseIcon = "⏸";
+        private string _playPauseToolTip = "Pause";
 
         public string Name
         {
@@ -44,6 +40,16 @@ namespace EasySaveGUI
         {
             get => _status;
             set { _status = value; OnPropertyChanged(nameof(Status)); }
+        }
+        public string PlayPauseIcon
+        {
+            get => _playPauseIcon;
+            set { _playPauseIcon = value; OnPropertyChanged(nameof(PlayPauseIcon)); }
+        }
+        public string PlayPauseToolTip
+        {
+            get => _playPauseToolTip;
+            set { _playPauseToolTip = value; OnPropertyChanged(nameof(PlayPauseToolTip)); }
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -282,21 +288,31 @@ namespace EasySaveGUI
             ShowExecSuccess(_langVM.GetString("success_delete")?.Replace("{name}", $"{selectedJobs.Count} job(s)"));
         }
 
-        private void BtnPause_Click(object sender, RoutedEventArgs e)
+        private void BtnPlayPause_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button btn && btn.CommandParameter is string jobName)
             {
-                _saveVM.PauseJob(jobName);
-                UpdateJobStatus(jobName, "Paused");
-            }
-        }
-
-        private void BtnResume_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is Button btn && btn.CommandParameter is string jobName)
-            {
-                _saveVM.ResumeJob(jobName);
-                UpdateJobStatus(jobName, "Running");
+                foreach (var job in ActiveJobs)
+                {
+                    if (job.Name == jobName)
+                    {
+                        if (job.Status == "Running")
+                        {
+                            _saveVM.PauseJob(jobName);
+                            job.Status = "Paused";
+                            job.PlayPauseIcon = "▶";
+                            job.PlayPauseToolTip = "Play";
+                        }
+                        else if (job.Status == "Paused")
+                        {
+                            _saveVM.ResumeJob(jobName);
+                            job.Status = "Running";
+                            job.PlayPauseIcon = "⏸";
+                            job.PlayPauseToolTip = "Pause";
+                        }
+                        break;
+                    }
+                }
             }
         }
 
@@ -305,18 +321,13 @@ namespace EasySaveGUI
             if (sender is Button btn && btn.CommandParameter is string jobName)
             {
                 _saveVM.StopJob(jobName);
-                UpdateJobStatus(jobName, "Stopping...");
-            }
-        }
-
-        private void UpdateJobStatus(string jobName, string status)
-        {
-            foreach (var job in ActiveJobs)
-            {
-                if (job.Name == jobName)
+                foreach (var job in ActiveJobs)
                 {
-                    job.Status = status;
-                    break;
+                    if (job.Name == jobName)
+                    {
+                        job.Status = "Stopping...";
+                        break;
+                    }
                 }
             }
         }
@@ -339,7 +350,9 @@ namespace EasySaveGUI
                     Name = job.Name,
                     Status = "Running",
                     Progress = 0,
-                    CurrentFile = "Starting backup..."
+                    CurrentFile = "Starting backup...",
+                    PlayPauseIcon = "⏸",
+                    PlayPauseToolTip = "Pause"
                 };
                 ActiveJobs.Add(jobUI);
 
