@@ -2,32 +2,71 @@
 using EasySave.ViewModel;
 using Microsoft.VisualBasic;
 using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Data;
 using System.Diagnostics;
-using System.Drawing.Imaging;
 using System.IO;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Documents;
 using System.Windows.Markup;
-using System.Windows.Media;
 using System.Windows.Media.TextFormatting;
 using System.Xml.Linq;
 
 namespace EasySaveGUI
 {
+    public class JobProgressInfo : INotifyPropertyChanged
+    {
+        private string _name;
+        private int _progress;
+        private string _currentFile;
+        private string _status;
+
+        public string Name
+        {
+            get => _name;
+            set { _name = value; OnPropertyChanged(nameof(Name)); }
+        }
+        public int Progress
+        {
+            get => _progress;
+            set { _progress = value; OnPropertyChanged(nameof(Progress)); }
+        }
+        public string CurrentFile
+        {
+            get => _currentFile;
+            set { _currentFile = value; OnPropertyChanged(nameof(CurrentFile)); }
+        }
+        public string Status
+        {
+            get => _status;
+            set { _status = value; OnPropertyChanged(nameof(Status)); }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected void OnPropertyChanged(string propertyName) =>
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+
     public partial class MainWindow : Window
     {
         private SaveViewModel _saveVM;
         private LanguageViewModel _langVM;
+
+        public ObservableCollection<JobProgressInfo> ActiveJobs { get; set; }
 
         public MainWindow()
         {
             InitializeComponent();
             _saveVM = new SaveViewModel();
             _langVM = new LanguageViewModel();
+            ActiveJobs = new ObservableCollection<JobProgressInfo>();
+
+            ActiveJobsControl.ItemsSource = ActiveJobs;
+
             CmbLanguage.SelectedIndex = 0;
             RefreshGrid();
             UpdateLogPath();
@@ -60,9 +99,7 @@ namespace EasySaveGUI
                 ColTarget.Header = _langVM.GetString("label_dest");
                 ColType.Header = _langVM.GetString("label_type");
                 LblPermanentHint.Text = _langVM.GetString("hint_ctrl_click");
-                CbiTypeFull.Content = _langVM.GetString("type_full");
-                CbiTypeDiff.Content = _langVM.GetString("type_diff");
-                LblEncryptedExt.Text = _langVM.GetString("label_encrypted_ext"); 
+                LblEncryptedExt.Text = _langVM.GetString("label_encrypted_ext");
             }
             catch { }
         }
@@ -128,7 +165,6 @@ namespace EasySaveGUI
         private void ClearExecBanners()
         {
             BannerExecError.Visibility = Visibility.Collapsed;
-            BannerRunning.Visibility = Visibility.Collapsed;
             BannerExecSuccess.Visibility = Visibility.Collapsed;
             BannerHint.Visibility = Visibility.Collapsed;
         }
@@ -160,13 +196,6 @@ namespace EasySaveGUI
             BannerExecError.Visibility = Visibility.Visible;
         }
 
-        private void ShowExecRunning(string message)
-        {
-            ClearExecBanners();
-            TxtBannerRunning.Text = message;
-            BannerRunning.Visibility = Visibility.Visible;
-        }
-
         private void ShowExecSuccess(string message)
         {
             ClearExecBanners();
@@ -179,37 +208,6 @@ namespace EasySaveGUI
             ClearExecBanners();
             TxtBannerHint.Text = _langVM.GetString("hint_ctrl_click");
             BannerHint.Visibility = Visibility.Visible;
-        }
-
-        private void SetCurrentFileLabel(string text)
-        {
-            LblCurrentFile.Inlines.Clear();
-
-            if (text == "...")
-            {
-                LblCurrentFile.Inlines.Add(new Run("...") { Foreground = new SolidColorBrush(Color.FromRgb(0x7d, 0x85, 0x90)) });
-                return;
-            }
-
-            if (text.StartsWith("Added") || text.StartsWith("[+]"))
-            {
-                string clean = text.Replace("[+] Added", "").Replace("Added", "").TrimStart();
-                LblCurrentFile.Inlines.Add(new Run("[+] ") { Foreground = new SolidColorBrush(Color.FromRgb(0x56, 0xd3, 0x64)), FontWeight = FontWeights.Bold, FontFamily = new FontFamily("Consolas") });
-                LblCurrentFile.Inlines.Add(new Run("Added  ") { Foreground = new SolidColorBrush(Color.FromRgb(0x56, 0xd3, 0x64)) });
-                LblCurrentFile.Inlines.Add(new Run(clean) { Foreground = new SolidColorBrush(Color.FromRgb(0xe6, 0xed, 0xf3)) });
-                return;
-            }
-
-            if (text.StartsWith("Updated") || text.StartsWith("[~]"))
-            {
-                string clean = text.Replace("[~] Updated", "").Replace("Updated", "").TrimStart();
-                LblCurrentFile.Inlines.Add(new Run("[~] ") { Foreground = new SolidColorBrush(Color.FromRgb(0x58, 0xa6, 0xff)), FontWeight = FontWeights.Bold, FontFamily = new FontFamily("Consolas") });
-                LblCurrentFile.Inlines.Add(new Run("Updated  ") { Foreground = new SolidColorBrush(Color.FromRgb(0x58, 0xa6, 0xff)) });
-                LblCurrentFile.Inlines.Add(new Run(clean) { Foreground = new SolidColorBrush(Color.FromRgb(0xe6, 0xed, 0xf3)) });
-                return;
-            }
-
-            LblCurrentFile.Inlines.Add(new Run(text) { Foreground = new SolidColorBrush(Color.FromRgb(0x7d, 0x85, 0x90)) });
         }
 
         private void SetButtonsEnabled(bool enabled)
@@ -269,7 +267,7 @@ namespace EasySaveGUI
                 return;
             }
 
-            System.Collections.Generic.List<Backup> selectedJobs = new System.Collections.Generic.List<Backup>();
+            List<Backup> selectedJobs = new List<Backup>();
             foreach (object item in GridJobs.SelectedItems)
             {
                 if (item is Backup job) selectedJobs.Add(job);
@@ -284,7 +282,111 @@ namespace EasySaveGUI
             ShowExecSuccess(_langVM.GetString("success_delete")?.Replace("{name}", $"{selectedJobs.Count} job(s)"));
         }
 
-        private async void BtnExecute_Click(object sender, RoutedEventArgs e)
+        private void BtnPause_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.CommandParameter is string jobName)
+            {
+                _saveVM.PauseJob(jobName);
+                UpdateJobStatus(jobName, "Paused");
+            }
+        }
+
+        private void BtnResume_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.CommandParameter is string jobName)
+            {
+                _saveVM.ResumeJob(jobName);
+                UpdateJobStatus(jobName, "Running");
+            }
+        }
+
+        private void BtnStop_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.CommandParameter is string jobName)
+            {
+                _saveVM.StopJob(jobName);
+                UpdateJobStatus(jobName, "Stopping...");
+            }
+        }
+
+        private void UpdateJobStatus(string jobName, string status)
+        {
+            foreach (var job in ActiveJobs)
+            {
+                if (job.Name == jobName)
+                {
+                    job.Status = status;
+                    break;
+                }
+            }
+        }
+
+        private async void RunJobsInParallel(List<Backup> jobsToRun)
+        {
+            ActiveJobs.Clear();
+            ClearExecBanners();
+            SetButtonsEnabled(false);
+
+            string businessSoft = TxtBusinessSoft.Text.Trim();
+            string encryptedExt = TxtEncryptedExt.Text.Trim();
+            List<Task> tasks = new List<Task>();
+            List<string> errorMessages = new List<string>();
+
+            foreach (Backup job in jobsToRun)
+            {
+                JobProgressInfo jobUI = new JobProgressInfo
+                {
+                    Name = job.Name,
+                    Status = "Running",
+                    Progress = 0,
+                    CurrentFile = "Starting backup..."
+                };
+                ActiveJobs.Add(jobUI);
+
+                Progress<int> progressObj = new Progress<int>(p => jobUI.Progress = p);
+                Action<string> updateTextObj = text => Application.Current.Dispatcher.Invoke(() => jobUI.CurrentFile = text);
+
+                Task task = Task.Run(async () =>
+                {
+                    string error = await _saveVM.PerformJobsAsync(job.Name, businessSoft, encryptedExt, progressObj, updateTextObj);
+
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        if (!string.IsNullOrEmpty(error))
+                        {
+                            if (error == "Job stopped.") jobUI.Status = "Stopped";
+                            else
+                            {
+                                jobUI.Status = "Error";
+                                errorMessages.Add($"[{job.Name}] {error}");
+                            }
+                        }
+                        else
+                        {
+                            jobUI.Status = "Finished";
+                            jobUI.Progress = 100;
+                        }
+                    });
+                });
+
+                tasks.Add(task);
+            }
+
+            await Task.WhenAll(tasks);
+
+            if (errorMessages.Count > 0)
+            {
+                ShowExecError(string.Join("\n", errorMessages));
+            }
+            else
+            {
+                ShowExecSuccess("All selected tasks have finished processing.");
+            }
+
+            SetButtonsEnabled(true);
+        }
+
+        private void BtnExecute_Click(object sender, RoutedEventArgs e)
         {
             if (GridJobs.SelectedItems.Count == 0)
             {
@@ -292,67 +394,16 @@ namespace EasySaveGUI
                 return;
             }
 
-            System.Collections.Generic.List<Backup> selectedJobs = new System.Collections.Generic.List<Backup>();
+            List<Backup> selectedJobs = new List<Backup>();
             foreach (object item in GridJobs.SelectedItems)
             {
                 if (item is Backup job) selectedJobs.Add(job);
             }
 
-            Progress<int> progress = new Progress<int>(p => ProgBar.Value = p);
-            Action<string> updateText = text =>
-                Application.Current.Dispatcher.Invoke(() => SetCurrentFileLabel(text));
-
-            string businessSoft = TxtBusinessSoft.Text.Trim();
-            string encryptedExt = TxtEncryptedExt.Text.Trim();
-            SetButtonsEnabled(false);
-
-            try
-            {
-                System.Collections.Generic.List<string> errorMessages = new System.Collections.Generic.List<string>();
-
-                foreach (Backup job in selectedJobs)
-                {
-                    ShowExecRunning(_langVM.GetString("executing_single")?.Replace("{name}", job.Name));
-
-                    string error = await Task.Run(() => _saveVM.PerformJobsAsync(job.Name, businessSoft, encryptedExt, progress, updateText));
-
-                    if (!string.IsNullOrEmpty(error))
-                    {
-                        if (error.Contains("Business software") || error.Contains("currently running"))
-                        {
-                            string tradError = _langVM.GetString("error_business_soft")?.Replace("{0}", businessSoft)
-                                               ?? $"Business software ({businessSoft}) is currently running. Backup blocked.";
-                            errorMessages.Add($"[{job.Name}] {tradError}");
-                        }
-                        else
-                        {
-                            errorMessages.Add($"[{job.Name}] {error}");
-                        }
-                    }
-                }
-
-                if (errorMessages.Count > 0)
-                {
-                    ShowExecError(string.Join("\n", errorMessages));
-                }
-                else
-                {
-                    ShowExecSuccess(_langVM.GetString("execution_finished"));
-                }
-            }
-            catch (Exception ex)
-            {
-                ShowExecError(ex.Message);
-            }
-            finally
-            {
-                SetButtonsEnabled(true);
-                SetCurrentFileLabel("...");
-                ProgBar.Value = 0;
-            }
+            RunJobsInParallel(selectedJobs);
         }
 
-        private async void BtnExecuteAll_Click(object sender, RoutedEventArgs e)
+        private void BtnExecuteAll_Click(object sender, RoutedEventArgs e)
         {
             if (GridJobs.Items.Count == 0)
             {
@@ -360,48 +411,8 @@ namespace EasySaveGUI
                 return;
             }
 
-            Progress<int> progress = new Progress<int>(p => ProgBar.Value = p);
-            Action<string> updateText = text =>
-                Application.Current.Dispatcher.Invoke(() => SetCurrentFileLabel(text));
-
-            ShowExecRunning(_langVM.GetString("executing_all"));
-            SetButtonsEnabled(false);
-
-            string businessSoft = TxtBusinessSoft.Text.Trim();
-            string encryptedExt = TxtEncryptedExt.Text.Trim();
-
-            try
-            {
-                string error = await Task.Run(() => _saveVM.PerformJobsAsync("", businessSoft, encryptedExt, progress, updateText));
-
-                if (string.IsNullOrEmpty(error))
-                {
-                    ShowExecSuccess(_langVM.GetString("success_execute_all"));
-                }
-                else
-                {
-                    if (error.Contains("Business software") || error.Contains("currently running"))
-                    {
-                        string tradError = _langVM.GetString("error_business_soft")?.Replace("{0}", businessSoft)
-                                           ?? $"Business software ({businessSoft}) is currently running. Backup blocked.";
-                        ShowExecError(tradError);
-                    }
-                    else
-                    {
-                        ShowExecError(error);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                ShowExecError(ex.Message);
-            }
-            finally
-            {
-                SetButtonsEnabled(true);
-                SetCurrentFileLabel("...");
-                ProgBar.Value = 0;
-            }
+            List<Backup> allJobs = _saveVM.GetAllJobs();
+            RunJobsInParallel(allJobs);
         }
 
         private void GridJobs_SelectionChanged(object sender, SelectionChangedEventArgs e)
