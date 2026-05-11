@@ -23,7 +23,7 @@ namespace EasySave.Services
             return Path.Combine(directory.FullName, "CryptoSoft", "CryptoSoft.exe");
         }
 
-        public static long CopyOrEncrypt(string sourceFile, string destinationFile, string encryptedExtensions)
+        public static long CopyOrEncrypt(string sourceFile, string destinationFile, string encryptedExtensions, Action<int> onChunkCopied = null)
         {
             string[] extensions = (encryptedExtensions ?? "")
                 .Split(';')
@@ -37,7 +37,19 @@ namespace EasySave.Services
 
             string extension = Path.GetExtension(sourceFile).ToLower();
 
-            File.Copy(sourceFile, destinationFile, true);
+            int bufferSize = 1024 * 1024;
+            byte[] buffer = new byte[bufferSize];
+
+            using (FileStream sourceStream = new FileStream(sourceFile, FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (FileStream destStream = new FileStream(destinationFile, FileMode.Create, FileAccess.Write))
+            {
+                int bytesRead;
+                while ((bytesRead = sourceStream.Read(buffer, 0, buffer.Length)) > 0)
+                {
+                    destStream.Write(buffer, 0, bytesRead);
+                    onChunkCopied?.Invoke(bytesRead);
+                }
+            }
 
             if (extensions.Contains(extension))
             {
@@ -63,10 +75,24 @@ namespace EasySave.Services
                 CreateNoWindow = true
             };
 
-            using (Process process = Process.Start(startInfo))
+            while (true)
             {
-                process.WaitForExit();
-                return process.ExitCode;
+                using (Process process = Process.Start(startInfo))
+                {
+                    process.WaitForExit();
+
+                    if (process.ExitCode == -99)
+                    {
+                        Thread.Sleep(100);
+                        continue;
+                    }
+                    if (process.ExitCode < 0)
+                    {
+                        throw new Exception($"CryptoSoft internal error (Code: {process.ExitCode})");
+                    }
+
+                    return process.ExitCode;
+                }
             }
         }
 

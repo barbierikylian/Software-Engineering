@@ -2,6 +2,7 @@
 using EasySave.Model;
 using EasySave.Services;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
@@ -20,8 +21,8 @@ namespace EasySave.Service
         public List<Backup> Jobs { get; private set; } = new();
         private string _currentLogFormat = "json";
 
-        public Dictionary<string, CancellationTokenSource> CancelTokens { get; } = new();
-        public Dictionary<string, ManualResetEventSlim> PauseEvents { get; } = new();
+        public ConcurrentDictionary<string, CancellationTokenSource> CancelTokens { get; } = new();
+        public ConcurrentDictionary<string, ManualResetEventSlim> PauseEvents { get; } = new();
 
         public BackupService()
         {
@@ -39,8 +40,11 @@ namespace EasySave.Service
             if (!Directory.Exists(job.FileDestination))
                 return $"Destination directory not found: {job.FileDestination}";
 
-            CancelTokens[job.Name] = new CancellationTokenSource();
-            PauseEvents[job.Name] = new ManualResetEventSlim(true);
+            var cts = new CancellationTokenSource();
+            var pauseEvent = new ManualResetEventSlim(true);
+
+            CancelTokens[job.Name] = cts;
+            PauseEvents[job.Name] = pauseEvent;
 
             IFormatter formatter = _currentLogFormat == "xml" ? new XmlFormatter() : new JsonFormatter();
             ILogStrategy liveLogger = new LogLive(StateFilePath, formatter);
@@ -51,31 +55,31 @@ namespace EasySave.Service
 
             try
             {
-                return await strategy.SaveAsync(job, businessSoftware, encryptedExtensions, liveLogger, formatter, progress, currentFileCallback, CancelTokens[job.Name].Token, PauseEvents[job.Name]);
+                return await strategy.SaveAsync(job, businessSoftware, encryptedExtensions, liveLogger, formatter, progress, currentFileCallback, cts.Token, pauseEvent);
             }
             finally
             {
-                CancelTokens.Remove(job.Name);
-                PauseEvents.Remove(job.Name);
+                CancelTokens.TryRemove(job.Name, out _);
+                PauseEvents.TryRemove(job.Name, out _);
             }
         }
 
         public void PauseJob(string jobName)
         {
-            if (PauseEvents.ContainsKey(jobName))
-                PauseEvents[jobName].Reset();
+            if (PauseEvents.TryGetValue(jobName, out var pauseEvent))
+                pauseEvent.Reset();
         }
 
         public void ResumeJob(string jobName)
         {
-            if (PauseEvents.ContainsKey(jobName))
-                PauseEvents[jobName].Set();
+            if (PauseEvents.TryGetValue(jobName, out var pauseEvent))
+                pauseEvent.Set();
         }
 
         public void StopJob(string jobName)
         {
-            if (CancelTokens.ContainsKey(jobName))
-                CancelTokens[jobName].Cancel();
+            if (CancelTokens.TryGetValue(jobName, out var cts))
+                cts.Cancel();
         }
 
         public void CreateJob(Backup job)

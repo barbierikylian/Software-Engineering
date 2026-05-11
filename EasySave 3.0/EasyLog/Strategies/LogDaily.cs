@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -6,6 +7,8 @@ namespace EasyLog
 {
     public class LogDaily : ILogStrategy
     {
+        private static readonly object _dailyFileLock = new object();
+
         private readonly string _logDirectory;
         private readonly IFormatter _formatter;
 
@@ -20,32 +23,35 @@ namespace EasyLog
 
         public void WriteLog(LogModel logModel)
         {
-            string fileName = DateTime.Now.ToString("yyyy-MM-dd") + "." + _formatter.FileExtension;
-            string fullPath = Path.Combine(_logDirectory, fileName);
-
-            string text = _formatter.Serialize(logModel);
-
-            if (_formatter.FileExtension == "xml")
+            lock (_dailyFileLock)
             {
-                if (!File.Exists(fullPath))
+                string fileName = DateTime.Now.ToString("yyyy-MM-dd") + "." + _formatter.FileExtension;
+                string fullPath = Path.Combine(_logDirectory, fileName);
+
+                string text = _formatter.Serialize(logModel);
+
+                if (_formatter.FileExtension == "xml")
                 {
-                    File.WriteAllText(fullPath, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<Logs>\n" + text + "\n</Logs>");
+                    if (!File.Exists(fullPath))
+                    {
+                        File.WriteAllText(fullPath, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<Logs>\n" + text + "\n</Logs>");
+                    }
+                    else
+                    {
+                        List<string> lines = File.ReadAllLines(fullPath).ToList();
+                        if (lines.Count > 0 && lines.Last().Contains("</Logs>"))
+                        {
+                            lines.RemoveAt(lines.Count - 1);
+                        }
+                        lines.Add(text);
+                        lines.Add("</Logs>");
+                        File.WriteAllLines(fullPath, lines);
+                    }
                 }
                 else
                 {
-                    List<string> lines = File.ReadAllLines(fullPath).ToList();
-                    if (lines.Count > 0 && lines.Last().Contains("</Logs>"))
-                    {
-                        lines.RemoveAt(lines.Count - 1);
-                    }
-                    lines.Add(text);
-                    lines.Add("</Logs>");
-                    File.WriteAllLines(fullPath, lines);
+                    File.AppendAllText(fullPath, text + "\n");
                 }
-            }
-            else
-            {
-                File.AppendAllText(fullPath, text + "\n");
             }
         }
     }

@@ -36,15 +36,18 @@ namespace EasySave.Services
 
                 ILogStrategy dailyLogger = new LogDaily(logDir, formatter);
                 var allFiles = Directory.GetFiles(source, "*", SearchOption.AllDirectories);
+                long totalSize = allFiles.Sum(f => new FileInfo(f).Length);
 
                 LogModel state = new LogModel
                 {
                     name = job.Name,
                     state = "Active",
                     totalFilesToCopy = allFiles.Length,
-                    totalFilesSize = allFiles.Sum(f => new FileInfo(f).Length),
+                    totalFilesSize = totalSize,
                     nbFilesLeftToDo = allFiles.Length,
-                    progression = 0
+                    sizeFileRemaining = totalSize,
+                    progression = 0,
+                    time = DateTime.Now
                 };
 
                 Stopwatch timer = Stopwatch.StartNew();
@@ -58,6 +61,10 @@ namespace EasySave.Services
                     state.state = "End";
                     state.progression = 100;
                     state.nbFilesLeftToDo = 0;
+                    state.sizeFileRemaining = 0;
+                    state.time = DateTime.Now;
+                    state.currentSourceFile = null;
+                    state.currentDestinationFile = null;
                     logger.WriteLog(state);
                 }
 
@@ -91,6 +98,7 @@ namespace EasySave.Services
                     lock (_logLock)
                     {
                         state.state = "Paused (Business Software)";
+                        state.time = DateTime.Now;
                         logger.WriteLog(state);
                     }
                     Thread.Sleep(2000);
@@ -113,7 +121,14 @@ namespace EasySave.Services
 
                 try
                 {
-                    if (isBigFile) SaveServices.BigFileSemaphore.Wait(cancelToken);
+                    if (isBigFile)
+                    {
+                        if (SaveServices.BigFileSemaphore.CurrentCount == 0)
+                        {
+                            currentFileCallback?.Invoke($"⏳ Waiting for bandwidth: {Path.GetFileName(filePath)} (>50MB)");
+                        }
+                        SaveServices.BigFileSemaphore.Wait(cancelToken);
+                    }
 
                     Stopwatch fileTimer = Stopwatch.StartNew();
                     long encTime = SaveServices.CopyOrEncrypt(filePath, destPath, encryptedExtensions);
@@ -128,6 +143,9 @@ namespace EasySave.Services
                         state.nbFilesLeftToDo = state.totalFilesToCopy - _filesCopied;
                         if (state.totalFilesSize > 0)
                             state.progression = (int)((_bytesCopied * 100) / state.totalFilesSize);
+
+                        state.sizeFileRemaining = state.totalFilesSize - _bytesCopied;
+                        state.time = DateTime.Now;
 
                         logger.WriteLog(state);
 
