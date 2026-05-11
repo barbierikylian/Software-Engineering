@@ -131,22 +131,31 @@ namespace EasySave.Services
                     }
 
                     Stopwatch fileTimer = Stopwatch.StartNew();
-                    long encTime = SaveServices.CopyOrEncrypt(filePath, destPath, encryptedExtensions);
+
+                    long encTime = SaveServices.CopyOrEncrypt(filePath, destPath, encryptedExtensions, (chunkSize) =>
+                    {
+                        lock (_logLock)
+                        {
+                            _bytesCopied += chunkSize;
+                            if (state.totalFilesSize > 0)
+                                state.progression = (int)((_bytesCopied * 100) / state.totalFilesSize);
+
+                            state.sizeFileRemaining = state.totalFilesSize - _bytesCopied;
+                            state.time = DateTime.Now;
+                        }
+                        progress?.Report(state.progression ?? 0);
+                        currentFileCallback?.Invoke($"Copying: {Path.GetFileName(filePath)} ({state.progression ?? 0}%)");
+                    }, pauseEvent, cancelToken);
+
                     fileTimer.Stop();
 
                     _filesCopied++;
-                    _bytesCopied += fileSize;
                     _totalEncryptionTime += encTime;
 
                     lock (_logLock)
                     {
                         state.nbFilesLeftToDo = state.totalFilesToCopy - _filesCopied;
-                        if (state.totalFilesSize > 0)
-                            state.progression = (int)((_bytesCopied * 100) / state.totalFilesSize);
-
-                        state.sizeFileRemaining = state.totalFilesSize - _bytesCopied;
                         state.time = DateTime.Now;
-
                         logger.WriteLog(state);
 
                         LogModel dailyLog = new LogModel
@@ -161,9 +170,6 @@ namespace EasySave.Services
                         };
                         dailyLogger.WriteLog(dailyLog);
                     }
-
-                    progress?.Report(state.progression ?? 0);
-                    currentFileCallback?.Invoke($"Copied: {Path.GetFileName(filePath)} ({state.progression ?? 0}%)");
                 }
                 finally
                 {
