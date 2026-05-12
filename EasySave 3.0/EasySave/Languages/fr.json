@@ -56,5 +56,22 @@
   "type_full": "Complète",
   "type_diff": "Différentielle",
   "error_business_soft": "Erreur : Le logiciel métier ({0}) est en cours d'exécution. Sauvegarde bloquée.",
-  "label_encrypted_ext": "Extensions cryptés"
+  "label_encrypted_ext": "Extensions cryptées",
+  "tooltip_close": "Fermer",
+  "tooltip_play": "Reprendre",
+  "tooltip_pause": "Mettre en pause",
+  "tooltip_stop": "Arrêter",
+  "status_running": "En cours",
+  "status_paused": "En pause",
+  "status_stopping": "Arrêt...",
+  "status_error": "Erreur",
+  "status_finished": "Terminé",
+  "status_blocked": "Bloqué",
+  "file_starting": "Démarrage de la sauvegarde...",
+  "success_all_tasks": "Toutes les tâches sélectionnées sont terminées.",
+  "label_priority_ext": "Extensions prioritaires",
+  "text_copying": "Copie : ",
+  "text_updating": "Mise à jour : ",
+  "text_blocked_by": "⏸ Bloqué par le processus : ",
+  "error_source_missing": "Erreur : Le répertoire source n'existe pas."
 }

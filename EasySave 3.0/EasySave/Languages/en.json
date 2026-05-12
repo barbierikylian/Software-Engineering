@@ -56,5 +56,22 @@
   "type_full": "Full",
   "type_diff": "Differential",
   "error_business_soft": "Error: Business software ({0}) is currently running. Backup blocked.",
-  "label_encrypted_ext": "Encrypted Extensions"
+  "label_encrypted_ext": "Encrypted Extensions",
+  "tooltip_close": "Close",
+  "tooltip_play": "Resume",
+  "tooltip_pause": "Pause",
+  "tooltip_stop": "Stop",
+  "status_running": "Running",
+  "status_paused": "Paused",
+  "status_stopping": "Stopping...",
+  "status_error": "Error",
+  "status_finished": "Finished",
+  "status_blocked": "Blocked",
+  "file_starting": "Starting backup...",
+  "success_all_tasks": "All selected tasks have finished processing.",
+  "label_priority_ext": "Priority Extensions",
+  "text_copying": "Copying: ",
+  "text_updating": "Updating: ",
+  "text_blocked_by": "⏸ Blocked by process: ",
+  "error_source_missing": "Error: Source directory does not exist."
 }

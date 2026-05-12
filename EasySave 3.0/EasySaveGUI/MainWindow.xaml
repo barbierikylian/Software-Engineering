@@ -357,7 +357,7 @@
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0" Text="[!] " Foreground="{StaticResource AccentRed}" FontWeight="Bold" FontFamily="Consolas" VerticalAlignment="Center"/>
                             <TextBlock Grid.Column="1" x:Name="TxtBannerError" Foreground="#ffa198" TextWrapping="Wrap" VerticalAlignment="Center" Margin="5,0,10,0"/>
-                            <TextBlock Grid.Column="2" Text="✕" Foreground="{StaticResource AccentRed}" FontSize="14" FontWeight="Bold" Cursor="Hand" VerticalAlignment="Center" MouseLeftButtonUp="CloseBanners_Click" ToolTip="Fermer"/>
+                            <TextBlock x:Name="BtnCloseBannerError" Grid.Column="2" Text="✕" Foreground="{StaticResource AccentRed}" FontSize="14" FontWeight="Bold" Cursor="Hand" VerticalAlignment="Center" MouseLeftButtonUp="CloseBanners_Click"/>
                         </Grid>
                     </Border>
 
@@ -370,7 +370,7 @@
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0" Text="[OK] " Foreground="{StaticResource AccentGreen}" FontWeight="Bold" FontFamily="Consolas" VerticalAlignment="Center"/>
                             <TextBlock Grid.Column="1" x:Name="TxtBannerSuccess" Foreground="#56d364" TextWrapping="Wrap" VerticalAlignment="Center" Margin="5,0,10,0"/>
-                            <TextBlock Grid.Column="2" Text="✕" Foreground="{StaticResource AccentGreen}" FontSize="14" FontWeight="Bold" Cursor="Hand" VerticalAlignment="Center" MouseLeftButtonUp="CloseBanners_Click" ToolTip="Fermer"/>
+                            <TextBlock x:Name="BtnCloseBannerSuccess" Grid.Column="2" Text="✕" Foreground="{StaticResource AccentGreen}" FontSize="14" FontWeight="Bold" Cursor="Hand" VerticalAlignment="Center" MouseLeftButtonUp="CloseBanners_Click"/>
                         </Grid>
                     </Border>
 
@@ -412,7 +412,7 @@
                     <TextBox x:Name="TxtEncryptedExt" Text=".txt;.pdf" Margin="0,0,0,24"/>
 
                     <TextBlock x:Name="LblPriorityExt" Text="Priority Extensions" Foreground="{StaticResource TextSecondary}" FontSize="12" Margin="0,0,0,6"/>
-                    <TextBox x:Name="TxtPriorityExt" Text=".txt;.doc" Margin="0,0,0,24"/>
+                    <TextBox x:Name="TxtPriorityExt" Text=".iso;.png" Margin="0,0,0,24"/>
 
                     <Separator Margin="0,0,0,24"/>
 
@@ -485,7 +485,7 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" Text="[!] " Foreground="{StaticResource AccentRed}" FontWeight="Bold" FontFamily="Consolas" VerticalAlignment="Center"/>
                         <TextBlock Grid.Column="1" x:Name="TxtBannerExecError" Foreground="#ffa198" TextWrapping="Wrap" VerticalAlignment="Center" Margin="5,0,10,0"/>
-                        <TextBlock Grid.Column="2" Text="✕" Foreground="{StaticResource AccentRed}" FontSize="14" FontWeight="Bold" Cursor="Hand" VerticalAlignment="Center" MouseLeftButtonUp="CloseBanners_Click" ToolTip="Fermer"/>
+                        <TextBlock x:Name="BtnCloseBannerExecError" Grid.Column="2" Text="✕" Foreground="{StaticResource AccentRed}" FontSize="14" FontWeight="Bold" Cursor="Hand" VerticalAlignment="Center" MouseLeftButtonUp="CloseBanners_Click"/>
                     </Grid>
                 </Border>
 
@@ -498,7 +498,7 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" Text="[OK] " Foreground="{StaticResource AccentGreen}" FontWeight="Bold" FontFamily="Consolas" VerticalAlignment="Center"/>
                         <TextBlock Grid.Column="1" x:Name="TxtBannerExecSuccess" Foreground="#56d364" TextWrapping="Wrap" VerticalAlignment="Center" Margin="5,0,10,0"/>
-                        <TextBlock Grid.Column="2" Text="✕" Foreground="{StaticResource AccentGreen}" FontSize="14" FontWeight="Bold" Cursor="Hand" VerticalAlignment="Center" MouseLeftButtonUp="CloseBanners_Click" ToolTip="Fermer"/>
+                        <TextBlock x:Name="BtnCloseBannerExecSuccess" Grid.Column="2" Text="✕" Foreground="{StaticResource AccentGreen}" FontSize="14" FontWeight="Bold" Cursor="Hand" VerticalAlignment="Center" MouseLeftButtonUp="CloseBanners_Click"/>
                     </Grid>
                 </Border>
 
@@ -511,7 +511,7 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" Text="(!) " Foreground="{StaticResource AccentYellow}" FontWeight="Bold" FontFamily="Consolas" VerticalAlignment="Center"/>
                         <TextBlock Grid.Column="1" x:Name="TxtBannerHint" Foreground="#e3b341" TextWrapping="Wrap" VerticalAlignment="Center" Margin="5,0,10,0"/>
-                        <TextBlock Grid.Column="2" Text="✕" Foreground="{StaticResource AccentYellow}" FontSize="14" FontWeight="Bold" Cursor="Hand" VerticalAlignment="Center" MouseLeftButtonUp="CloseBanners_Click" ToolTip="Fermer"/>
+                        <TextBlock x:Name="BtnCloseBannerHint" Grid.Column="2" Text="✕" Foreground="{StaticResource AccentYellow}" FontSize="14" FontWeight="Bold" Cursor="Hand" VerticalAlignment="Center" MouseLeftButtonUp="CloseBanners_Click"/>
                     </Grid>
                 </Border>
             </StackPanel>
@@ -552,7 +552,7 @@
 
                                     <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
                                         <Button Content="{Binding PlayPauseIcon}" IsEnabled="{Binding IsPlayPauseEnabled}" Style="{StaticResource ActionBtnStyle}" ToolTip="{Binding PlayPauseToolTip}" CommandParameter="{Binding Name}" Click="BtnPlayPause_Click" Width="32" Height="26" Margin="0,0,4,0"/>
-                                        <Button Content="⏹" Style="{StaticResource ActionBtnStyle}" ToolTip="Stop" CommandParameter="{Binding Name}" Click="BtnStop_Click" Width="32" Height="26" Foreground="{StaticResource AccentRed}"/>
+                                        <Button Content="⏹" Style="{StaticResource ActionBtnStyle}" ToolTip="{Binding StopToolTip}" CommandParameter="{Binding Name}" Click="BtnStop_Click" Width="32" Height="26" Foreground="{StaticResource AccentRed}"/>
                                     </StackPanel>
                                 </Grid>
                             </Border>

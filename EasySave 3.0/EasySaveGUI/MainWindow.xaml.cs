@@ -19,7 +19,8 @@ namespace EasySaveGUI
         private string _currentFile;
         private string _status;
         private string _playPauseIcon = "⏸";
-        private string _playPauseToolTip = "Pause";
+        private string _playPauseToolTip;
+        private string _stopToolTip;
         private bool _isPlayPauseEnabled = true;
 
         public string Name
@@ -51,6 +52,11 @@ namespace EasySaveGUI
         {
             get => _playPauseToolTip;
             set { _playPauseToolTip = value; OnPropertyChanged(nameof(PlayPauseToolTip)); }
+        }
+        public string StopToolTip
+        {
+            get => _stopToolTip;
+            set { _stopToolTip = value; OnPropertyChanged(nameof(StopToolTip)); }
         }
         public bool IsPlayPauseEnabled
         {
@@ -100,6 +106,7 @@ namespace EasySaveGUI
                 LblLogsTitle.Text = _langVM.GetString("label_logs_title");
                 LblLogFormat.Text = _langVM.GetString("label_log_format");
                 LblLogLocation.Text = _langVM.GetString("label_log_location");
+                LblDataLocation.Text = _langVM.GetString("label_data_location") ?? "Data Location";
                 BtnAdd.Content = _langVM.GetString("menu_create");
                 BtnDelete.Content = _langVM.GetString("menu_delete");
                 BtnExecute.Content = _langVM.GetString("menu_execute");
@@ -113,6 +120,16 @@ namespace EasySaveGUI
                 LblPermanentHint.Text = _langVM.GetString("hint_ctrl_click");
                 LblEncryptedExt.Text = _langVM.GetString("label_encrypted_ext");
                 LblPriorityExt.Text = _langVM.GetString("label_priority_ext") ?? "Priority Extensions";
+
+                if (CbiTypeFull != null) CbiTypeFull.Content = _langVM.GetString("type_full");
+                if (CbiTypeDiff != null) CbiTypeDiff.Content = _langVM.GetString("type_diff");
+
+                string closeToolTip = _langVM.GetString("tooltip_close") ?? "Close";
+                if (BtnCloseBannerError != null) BtnCloseBannerError.ToolTip = closeToolTip;
+                if (BtnCloseBannerSuccess != null) BtnCloseBannerSuccess.ToolTip = closeToolTip;
+                if (BtnCloseBannerExecError != null) BtnCloseBannerExecError.ToolTip = closeToolTip;
+                if (BtnCloseBannerExecSuccess != null) BtnCloseBannerExecSuccess.ToolTip = closeToolTip;
+                if (BtnCloseBannerHint != null) BtnCloseBannerHint.ToolTip = closeToolTip;
             }
             catch { }
         }
@@ -303,21 +320,19 @@ namespace EasySaveGUI
                 {
                     if (job.Name == jobName)
                     {
-                        if (job.Status == "Blocked") break;
-
-                        if (job.Status == "Running")
+                        if (job.PlayPauseIcon == "⏸")
                         {
                             _saveVM.PauseJob(jobName);
-                            job.Status = "Paused";
+                            job.Status = _langVM.GetString("status_paused") ?? "Paused";
                             job.PlayPauseIcon = "▶";
-                            job.PlayPauseToolTip = "Play";
+                            job.PlayPauseToolTip = _langVM.GetString("tooltip_play") ?? "Play";
                         }
-                        else if (job.Status == "Paused")
+                        else
                         {
                             _saveVM.ResumeJob(jobName);
-                            job.Status = "Running";
+                            job.Status = _langVM.GetString("status_running") ?? "Running";
                             job.PlayPauseIcon = "⏸";
-                            job.PlayPauseToolTip = "Pause";
+                            job.PlayPauseToolTip = _langVM.GetString("tooltip_pause") ?? "Pause";
                         }
                         break;
                     }
@@ -365,11 +380,12 @@ namespace EasySaveGUI
                 JobProgressInfo jobUI = new JobProgressInfo
                 {
                     Name = job.Name,
-                    Status = "Running",
+                    Status = _langVM.GetString("status_running") ?? "Running",
                     Progress = 0,
-                    CurrentFile = "Starting backup...",
+                    CurrentFile = _langVM.GetString("file_starting") ?? "Starting backup...",
                     PlayPauseIcon = "⏸",
-                    PlayPauseToolTip = "Pause",
+                    PlayPauseToolTip = _langVM.GetString("tooltip_pause") ?? "Pause",
+                    StopToolTip = _langVM.GetString("tooltip_stop") ?? "Stop",
                     IsPlayPauseEnabled = true
                 };
                 ActiveJobs.Add(jobUI);
@@ -380,16 +396,21 @@ namespace EasySaveGUI
                 {
                     if (!ActiveJobs.Contains(jobUI)) return;
 
-                    jobUI.CurrentFile = text;
+                    string translatedText = text
+                        .Replace("Copying:", _langVM.GetString("text_copying") ?? "Copying:")
+                        .Replace("Updating:", _langVM.GetString("text_updating") ?? "Updating:")
+                        .Replace("⏸ Blocked by process:", _langVM.GetString("text_blocked_by") ?? "⏸ Blocked by process:");
 
-                    if (text.StartsWith("⏸ Blocked"))
+                    jobUI.CurrentFile = translatedText;
+
+                    if (text.StartsWith("⏸"))
                     {
-                        jobUI.Status = "Blocked";
+                        jobUI.Status = _langVM.GetString("status_blocked") ?? "Blocked";
                         jobUI.IsPlayPauseEnabled = false;
                     }
-                    else if (jobUI.Status == "Blocked" && (text.StartsWith("Copying") || text.StartsWith("Updating") || text.StartsWith("Starting")))
+                    else if (!jobUI.IsPlayPauseEnabled && jobUI.PlayPauseIcon == "⏸" && !text.StartsWith("⏸"))
                     {
-                        jobUI.Status = "Running";
+                        jobUI.Status = _langVM.GetString("status_running") ?? "Running";
                         jobUI.IsPlayPauseEnabled = true;
                     }
                 });
@@ -410,7 +431,10 @@ namespace EasySaveGUI
                             }
                             else
                             {
-                                jobUI.Status = "Error";
+                                if (error.StartsWith("Error: Source directory does not exist."))
+                                    error = _langVM.GetString("error_source_missing") ?? error;
+
+                                jobUI.Status = _langVM.GetString("status_error") ?? "Error";
                                 jobUI.CurrentFile = error;
                                 jobUI.IsPlayPauseEnabled = false;
 
@@ -426,8 +450,8 @@ namespace EasySaveGUI
                         }
                         else
                         {
-                            jobUI.Status = "Finished";
-                            jobUI.CurrentFile = "Finished";
+                            jobUI.Status = _langVM.GetString("status_finished") ?? "Finished";
+                            jobUI.CurrentFile = _langVM.GetString("status_finished") ?? "Finished";
                             jobUI.Progress = 100;
                             jobUI.IsPlayPauseEnabled = false;
                         }
@@ -443,7 +467,7 @@ namespace EasySaveGUI
 
             if (BannerExecError.Visibility != Visibility.Visible)
             {
-                ShowExecSuccess("All selected tasks have finished processing.");
+                ShowExecSuccess(_langVM.GetString("success_all_tasks") ?? "All selected tasks have finished processing.");
             }
         }
 
