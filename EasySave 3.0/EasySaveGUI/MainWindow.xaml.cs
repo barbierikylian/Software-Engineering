@@ -112,6 +112,7 @@ namespace EasySaveGUI
                 ColType.Header = _langVM.GetString("label_type");
                 LblPermanentHint.Text = _langVM.GetString("hint_ctrl_click");
                 LblEncryptedExt.Text = _langVM.GetString("label_encrypted_ext");
+                LblPriorityExt.Text = _langVM.GetString("label_priority_ext") ?? "Priority Extensions";
             }
             catch { }
         }
@@ -355,7 +356,7 @@ namespace EasySaveGUI
 
             string businessSoft = TxtBusinessSoft.Text.Trim();
             string encryptedExt = TxtEncryptedExt.Text.Trim();
-            string priorityExt = "";
+            string priorityExt = TxtPriorityExt.Text.Trim();
 
             List<Task> tasks = new List<Task>();
 

@@ -409,14 +409,10 @@
                     </Border>
 
                     <TextBlock x:Name="LblEncryptedExt" Text="Encrypted Extensions" Foreground="{StaticResource TextSecondary}" FontSize="12" Margin="0,0,0,6"/>
-                    <TextBox x:Name="TxtEncryptedExt" Text=".txt;.pdf" Margin="0,0,0,8"/>
+                    <TextBox x:Name="TxtEncryptedExt" Text=".txt;.pdf" Margin="0,0,0,24"/>
 
-                    <Border Background="#0f1f3d" BorderBrush="{StaticResource AccentBlue}" BorderThickness="1" CornerRadius="6" Padding="10,7" Margin="0,0,0,24">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="(!) " Foreground="#58a6ff" FontWeight="Bold" FontFamily="Consolas"/>
-                            <TextBlock Text="Example: .txt;.pdf;.doc" Foreground="#58a6ff" FontSize="11"/>
-                        </StackPanel>
-                    </Border>
+                    <TextBlock x:Name="LblPriorityExt" Text="Priority Extensions" Foreground="{StaticResource TextSecondary}" FontSize="12" Margin="0,0,0,6"/>
+                    <TextBox x:Name="TxtPriorityExt" Text=".txt;.doc" Margin="0,0,0,24"/>
 
                     <Separator Margin="0,0,0,24"/>
 

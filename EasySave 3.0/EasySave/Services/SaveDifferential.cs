@@ -104,109 +104,127 @@ namespace EasySave.Services
 
         private void CopyFiles(string source, string target, string[] allFiles, string businessSoftware, string encryptedExtensions, string priorityExtensions, LogModel state, ILogStrategy logger, ILogStrategy dailyLogger, IProgress<int> progress, Action<string> currentFileCallback, CancellationToken cancelToken, ManualResetEventSlim pauseEvent)
         {
-            string[] prioExts = (priorityExtensions ?? "").Split(';').Select(e => e.Trim().ToLower()).Where(e => !string.IsNullOrEmpty(e)).Select(e => e.StartsWith(".") ? e : "." + e).ToArray();
-            var sortedFiles = allFiles.OrderByDescending(f => prioExts.Contains(Path.GetExtension(f).ToLower())).ToArray();
-
-            foreach (string filePath in sortedFiles)
+            try
             {
-                cancelToken.ThrowIfCancellationRequested();
-                pauseEvent.Wait(cancelToken);
+                string[] prioExts = (priorityExtensions ?? "")
+                    .Split(new char[] { ';', ',' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(e => e.Trim().ToLower())
+                    .Where(e => !string.IsNullOrEmpty(e))
+                    .Select(e => e.StartsWith(".") ? e : "." + e)
+                    .ToArray();
 
-                bool wasBlockedBetween = false;
-                while (BusinessSoftwareDetector.IsRunning(businessSoftware))
+                var sortedFiles = allFiles.OrderBy(f =>
+                {
+                    string ext = Path.GetExtension(f).ToLower();
+                    int index = Array.IndexOf(prioExts, ext);
+                    return index != -1 ? index : int.MaxValue;
+                }).ThenBy(f => f).ToArray();
+
+                foreach (string filePath in sortedFiles)
                 {
                     cancelToken.ThrowIfCancellationRequested();
-                    if (!wasBlockedBetween)
+                    pauseEvent.Wait(cancelToken);
+
+                    bool wasBlockedBetween = false;
+                    while (BusinessSoftwareDetector.IsRunning(businessSoftware))
                     {
-                        lock (_logLock) { state.state = "Paused (Business Software)"; logger.WriteLog(state); }
-                        currentFileCallback?.Invoke($"⏸ Blocked by process: {businessSoftware}");
-                        wasBlockedBetween = true;
-                    }
-                    Thread.Sleep(2000);
-                }
-                if (wasBlockedBetween)
-                {
-                    lock (_logLock) { state.state = "Active"; }
-                }
-
-                string relativePath = filePath.Substring(source.Length).TrimStart(Path.DirectorySeparatorChar);
-                string destPath = Path.Combine(target, relativePath);
-
-                if (ShouldCopy(filePath, destPath))
-                {
-                    string destDir = Path.GetDirectoryName(destPath);
-                    if (!Directory.Exists(destDir)) Directory.CreateDirectory(destDir);
-
-                    long fileSize = new FileInfo(filePath).Length;
-                    bool isBigFile = fileSize > SaveServices.BIG_FILE_THRESHOLD;
-                    bool semaphoreAcquired = false;
-
-                    try
-                    {
-                        if (isBigFile)
+                        cancelToken.ThrowIfCancellationRequested();
+                        if (!wasBlockedBetween)
                         {
-                            SaveServices.BigFileSemaphore.Wait(cancelToken);
-                            semaphoreAcquired = true;
+                            lock (_logLock) { state.state = "Paused (Business Software)"; logger.WriteLog(state); }
+                            currentFileCallback?.Invoke($"⏸ Blocked by process: {businessSoftware}");
+                            wasBlockedBetween = true;
                         }
-                        Stopwatch fileTimer = Stopwatch.StartNew();
+                        Thread.Sleep(2000);
+                    }
+                    if (wasBlockedBetween)
+                    {
+                        lock (_logLock) { state.state = "Active"; }
+                    }
 
-                        long encTime = SaveServices.CopyOrEncrypt(filePath, destPath, encryptedExtensions, (chunkSize) =>
+                    string relativePath = filePath.Substring(source.Length).TrimStart(Path.DirectorySeparatorChar);
+                    string destPath = Path.Combine(target, relativePath);
+
+                    if (ShouldCopy(filePath, destPath))
+                    {
+                        string destDir = Path.GetDirectoryName(destPath);
+                        if (!Directory.Exists(destDir)) Directory.CreateDirectory(destDir);
+
+                        long fileSize = new FileInfo(filePath).Length;
+                        bool isBigFile = fileSize > SaveServices.BIG_FILE_THRESHOLD;
+                        bool semaphoreAcquired = false;
+
+                        try
                         {
-                            bool wasPausedBySoftware = false;
-                            while (BusinessSoftwareDetector.IsRunning(businessSoftware))
+                            if (isBigFile)
                             {
-                                if (!wasPausedBySoftware)
+                                SaveServices.BigFileSemaphore.Wait(cancelToken);
+                                semaphoreAcquired = true;
+                            }
+                            Stopwatch fileTimer = Stopwatch.StartNew();
+
+                            long encTime = SaveServices.CopyOrEncrypt(filePath, destPath, encryptedExtensions, (chunkSize) =>
+                            {
+                                bool wasPausedBySoftware = false;
+                                while (BusinessSoftwareDetector.IsRunning(businessSoftware))
                                 {
-                                    lock (_logLock) { state.state = "Paused (Business Software)"; logger.WriteLog(state); }
-                                    currentFileCallback?.Invoke($"⏸ Blocked by process: {businessSoftware}");
-                                    wasPausedBySoftware = true;
+                                    if (!wasPausedBySoftware)
+                                    {
+                                        lock (_logLock) { state.state = "Paused (Business Software)"; logger.WriteLog(state); }
+                                        currentFileCallback?.Invoke($"⏸ Blocked by process: {businessSoftware}");
+                                        wasPausedBySoftware = true;
+                                    }
+                                    cancelToken.ThrowIfCancellationRequested();
+                                    Thread.Sleep(1000);
                                 }
-                                cancelToken.ThrowIfCancellationRequested();
-                                Thread.Sleep(1000);
-                            }
-                            if (wasPausedBySoftware)
-                            {
-                                lock (_logLock) { state.state = "Active"; logger.WriteLog(state); }
-                            }
+                                if (wasPausedBySoftware)
+                                {
+                                    lock (_logLock) { state.state = "Active"; logger.WriteLog(state); }
+                                }
+
+                                lock (_logLock)
+                                {
+                                    _bytesCopied += chunkSize;
+                                    if (state.totalFilesSize > 0)
+                                        state.progression = (int)((_bytesCopied * 100) / state.totalFilesSize);
+                                    state.sizeFileRemaining = state.totalFilesSize - _bytesCopied;
+                                    state.time = DateTime.Now;
+                                }
+                                progress?.Report(state.progression ?? 0);
+                                currentFileCallback?.Invoke($"Updating: {Path.GetFileName(filePath)} ({state.progression}%)");
+                            }, pauseEvent, cancelToken);
+
+                            fileTimer.Stop();
+                            _filesCopied++;
 
                             lock (_logLock)
                             {
-                                _bytesCopied += chunkSize;
-                                if (state.totalFilesSize > 0)
-                                    state.progression = (int)((_bytesCopied * 100) / state.totalFilesSize);
-                                state.sizeFileRemaining = state.totalFilesSize - _bytesCopied;
-                                state.time = DateTime.Now;
+                                state.nbFilesLeftToDo = state.totalFilesToCopy - _filesCopied;
+                                logger.WriteLog(state);
+                                dailyLogger.WriteLog(new LogModel
+                                {
+                                    name = state.name,
+                                    fileSource = filePath,
+                                    fileDestination = destPath,
+                                    fileSize = fileSize,
+                                    fileTransferTime = fileTimer.Elapsed.TotalMilliseconds,
+                                    encryptionTime = encTime,
+                                    time = DateTime.Now
+                                });
                             }
-                            progress?.Report(state.progression ?? 0);
-                            currentFileCallback?.Invoke($"Updating: {Path.GetFileName(filePath)} ({state.progression}%)");
-                        }, pauseEvent, cancelToken);
-
-                        fileTimer.Stop();
-                        _filesCopied++;
-
-                        lock (_logLock)
-                        {
-                            state.nbFilesLeftToDo = state.totalFilesToCopy - _filesCopied;
-                            logger.WriteLog(state);
-                            dailyLogger.WriteLog(new LogModel
-                            {
-                                name = state.name,
-                                fileSource = filePath,
-                                fileDestination = destPath,
-                                fileSize = fileSize,
-                                fileTransferTime = fileTimer.Elapsed.TotalMilliseconds,
-                                encryptionTime = encTime,
-                                time = DateTime.Now
-                            });
                         }
+                        finally { if (semaphoreAcquired) SaveServices.BigFileSemaphore.Release(); }
                     }
-                    finally { if (semaphoreAcquired) SaveServices.BigFileSemaphore.Release(); }
+                    else
+                    {
+                        _filesCopied++;
+                        lock (_logLock) { state.nbFilesLeftToDo = state.totalFilesToCopy - _filesCopied; }
+                    }
                 }
-                else
-                {
-                    _filesCopied++;
-                    lock (_logLock) { state.nbFilesLeftToDo = state.totalFilesToCopy - _filesCopied; }
-                }
+            }
+            catch (OperationCanceledException)
+            {
+                return;
             }
         }
 
