@@ -32,14 +32,8 @@ namespace EasySave.Service
 
         public void SetLogFormat(string format) => _currentLogFormat = format.ToLower();
 
-        public async Task<string> PerformJobsAsync(Backup job, string businessSoftware, string encryptedExtensions, IProgress<int> progress = null, Action<string> currentFileCallback = null)
+        public async Task<string> PerformJobsAsync(Backup job, string businessSoftware, string encryptedExtensions, string priorityExtensions = "", IProgress<int> progress = null, Action<string> currentFileCallback = null)
         {
-            if (!Directory.Exists(job.FileSource))
-                return $"Source directory not found: {job.FileSource}";
-
-            if (!Directory.Exists(job.FileDestination))
-                return $"Destination directory not found: {job.FileDestination}";
-
             var cts = new CancellationTokenSource();
             var pauseEvent = new ManualResetEventSlim(true);
 
@@ -55,7 +49,7 @@ namespace EasySave.Service
 
             try
             {
-                return await strategy.SaveAsync(job, businessSoftware, encryptedExtensions, liveLogger, formatter, progress, currentFileCallback, cts.Token, pauseEvent);
+                return await strategy.SaveAsync(job, businessSoftware, encryptedExtensions, priorityExtensions, liveLogger, formatter, progress, currentFileCallback, cts.Token, pauseEvent);
             }
             finally
             {

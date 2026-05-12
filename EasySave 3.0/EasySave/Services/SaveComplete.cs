@@ -14,47 +14,73 @@ namespace EasySave.Services
     {
         private int _filesCopied = 0;
         private long _bytesCopied = 0;
-        private long _totalEncryptionTime = 0;
         private static readonly object _logLock = new object();
 
-        public async Task<string> SaveAsync(Backup job, string businessSoftware, string encryptedExtensions, ILogStrategy logger, IFormatter formatter, IProgress<int> progress, Action<string> currentFileCallback, CancellationToken cancelToken, ManualResetEventSlim pauseEvent)
+        public async Task<string> SaveAsync(Backup job, string businessSoftware, string encryptedExtensions, string priorityExtensions, ILogStrategy logger, IFormatter formatter, IProgress<int> progress, Action<string> currentFileCallback, CancellationToken cancelToken, ManualResetEventSlim pauseEvent)
         {
+            LogModel state = new LogModel
+            {
+                name = job.Name,
+                state = "Active",
+                progression = 0,
+                time = DateTime.Now
+            };
+
             try
             {
                 string source = SaveServices.ConvertToUNC(job.FileSource);
                 string target = SaveServices.ConvertToUNC(job.FileDestination);
 
-                if (!Directory.Exists(source)) return "Error: Source directory does not exist.";
+                if (!Directory.Exists(source))
+                {
+                    lock (_logLock)
+                    {
+                        state.state = "Error";
+                        state.time = DateTime.Now;
+                        logger.WriteLog(state);
+                    }
+                    return "Error: Source directory does not exist.";
+                }
 
                 _filesCopied = 0;
                 _bytesCopied = 0;
-                _totalEncryptionTime = 0;
 
                 string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
                 string logDir = Path.Combine(appData, "EasySave", "logs");
-                if (!Directory.Exists(logDir)) Directory.CreateDirectory(logDir);
-
                 ILogStrategy dailyLogger = new LogDaily(logDir, formatter);
+
                 var allFiles = Directory.GetFiles(source, "*", SearchOption.AllDirectories);
                 long totalSize = allFiles.Sum(f => new FileInfo(f).Length);
 
-                LogModel state = new LogModel
+                state.totalFilesToCopy = allFiles.Length;
+                state.totalFilesSize = totalSize;
+                state.nbFilesLeftToDo = allFiles.Length;
+                state.sizeFileRemaining = totalSize;
+
+                bool wasCanceled = false;
+
+                await Task.Run(() =>
                 {
-                    name = job.Name,
-                    state = "Active",
-                    totalFilesToCopy = allFiles.Length,
-                    totalFilesSize = totalSize,
-                    nbFilesLeftToDo = allFiles.Length,
-                    sizeFileRemaining = totalSize,
-                    progression = 0,
-                    time = DateTime.Now
-                };
+                    try
+                    {
+                        CopyFiles(source, target, allFiles, businessSoftware, encryptedExtensions, priorityExtensions, state, logger, dailyLogger, progress, currentFileCallback, cancelToken, pauseEvent);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        wasCanceled = true;
+                    }
+                });
 
-                Stopwatch timer = Stopwatch.StartNew();
-                string recursiveError = await Task.Run(() => CopyDirectoryRecursive(source, target, businessSoftware, encryptedExtensions, state, logger, dailyLogger, progress, currentFileCallback, cancelToken, pauseEvent));
-                timer.Stop();
-
-                if (recursiveError != null) return recursiveError;
+                if (wasCanceled)
+                {
+                    lock (_logLock)
+                    {
+                        state.state = "Stopped";
+                        state.time = DateTime.Now;
+                        logger.WriteLog(state);
+                    }
+                    return "Job stopped.";
+                }
 
                 lock (_logLock)
                 {
@@ -63,102 +89,107 @@ namespace EasySave.Services
                     state.nbFilesLeftToDo = 0;
                     state.sizeFileRemaining = 0;
                     state.time = DateTime.Now;
-                    state.currentSourceFile = null;
-                    state.currentDestinationFile = null;
                     logger.WriteLog(state);
                 }
-
-                progress?.Report(100);
-                currentFileCallback?.Invoke("Finished.");
-
                 return null;
-            }
-            catch (OperationCanceledException)
-            {
-                return "Job stopped.";
             }
             catch (Exception ex)
             {
+                lock (_logLock)
+                {
+                    state.state = "Error";
+                    state.time = DateTime.Now;
+                    logger.WriteLog(state);
+                }
                 return $"Error: {ex.Message}";
             }
         }
 
-        private string CopyDirectoryRecursive(string src, string trg, string businessSoftware, string encryptedExtensions, LogModel state, ILogStrategy logger, ILogStrategy dailyLogger, IProgress<int> progress, Action<string> currentFileCallback, CancellationToken cancelToken, ManualResetEventSlim pauseEvent)
+        private void CopyFiles(string source, string target, string[] allFiles, string businessSoftware, string encryptedExtensions, string priorityExtensions, LogModel state, ILogStrategy logger, ILogStrategy dailyLogger, IProgress<int> progress, Action<string> currentFileCallback, CancellationToken cancelToken, ManualResetEventSlim pauseEvent)
         {
-            if (!Directory.Exists(trg)) Directory.CreateDirectory(trg);
+            string[] prioExts = (priorityExtensions ?? "").Split(';').Select(e => e.Trim().ToLower()).Where(e => !string.IsNullOrEmpty(e)).Select(e => e.StartsWith(".") ? e : "." + e).ToArray();
+            var sortedFiles = allFiles.OrderByDescending(f => prioExts.Contains(Path.GetExtension(f).ToLower())).ToArray();
 
-            foreach (string filePath in Directory.GetFiles(src))
+            foreach (string filePath in sortedFiles)
             {
                 cancelToken.ThrowIfCancellationRequested();
                 pauseEvent.Wait(cancelToken);
 
+                bool wasBlockedBetween = false;
                 while (BusinessSoftwareDetector.IsRunning(businessSoftware))
                 {
                     cancelToken.ThrowIfCancellationRequested();
-                    lock (_logLock)
+                    if (!wasBlockedBetween)
                     {
-                        state.state = "Paused (Business Software)";
-                        state.time = DateTime.Now;
-                        logger.WriteLog(state);
+                        lock (_logLock) { state.state = "Paused (Business Software)"; logger.WriteLog(state); }
+                        currentFileCallback?.Invoke($"⏸ Blocked by process: {businessSoftware}");
+                        wasBlockedBetween = true;
                     }
                     Thread.Sleep(2000);
                 }
-
-                lock (_logLock)
+                if (wasBlockedBetween)
                 {
-                    state.state = "Active";
+                    lock (_logLock) { state.state = "Active"; }
                 }
 
-                string destPath = Path.Combine(trg, Path.GetFileName(filePath));
+                string relativePath = filePath.Substring(source.Length).TrimStart(Path.DirectorySeparatorChar);
+                string destPath = Path.Combine(target, relativePath);
+
+                string destDir = Path.GetDirectoryName(destPath);
+                if (!Directory.Exists(destDir)) Directory.CreateDirectory(destDir);
+
                 long fileSize = new FileInfo(filePath).Length;
                 bool isBigFile = fileSize > SaveServices.BIG_FILE_THRESHOLD;
-
-                lock (_logLock)
-                {
-                    state.currentSourceFile = filePath;
-                    state.currentDestinationFile = destPath;
-                }
+                bool semaphoreAcquired = false;
 
                 try
                 {
                     if (isBigFile)
                     {
-                        if (SaveServices.BigFileSemaphore.CurrentCount == 0)
-                        {
-                            currentFileCallback?.Invoke($"⏳ Waiting for bandwidth: {Path.GetFileName(filePath)} (>50MB)");
-                        }
                         SaveServices.BigFileSemaphore.Wait(cancelToken);
+                        semaphoreAcquired = true;
                     }
-
                     Stopwatch fileTimer = Stopwatch.StartNew();
 
                     long encTime = SaveServices.CopyOrEncrypt(filePath, destPath, encryptedExtensions, (chunkSize) =>
                     {
+                        bool wasPausedBySoftware = false;
+                        while (BusinessSoftwareDetector.IsRunning(businessSoftware))
+                        {
+                            if (!wasPausedBySoftware)
+                            {
+                                lock (_logLock) { state.state = "Paused (Business Software)"; logger.WriteLog(state); }
+                                currentFileCallback?.Invoke($"⏸ Blocked by process: {businessSoftware}");
+                                wasPausedBySoftware = true;
+                            }
+                            cancelToken.ThrowIfCancellationRequested();
+                            Thread.Sleep(1000);
+                        }
+                        if (wasPausedBySoftware)
+                        {
+                            lock (_logLock) { state.state = "Active"; logger.WriteLog(state); }
+                        }
+
                         lock (_logLock)
                         {
                             _bytesCopied += chunkSize;
                             if (state.totalFilesSize > 0)
                                 state.progression = (int)((_bytesCopied * 100) / state.totalFilesSize);
-
                             state.sizeFileRemaining = state.totalFilesSize - _bytesCopied;
                             state.time = DateTime.Now;
                         }
                         progress?.Report(state.progression ?? 0);
-                        currentFileCallback?.Invoke($"Copying: {Path.GetFileName(filePath)} ({state.progression ?? 0}%)");
+                        currentFileCallback?.Invoke($"Copying: {Path.GetFileName(filePath)} ({state.progression}%)");
                     }, pauseEvent, cancelToken);
 
                     fileTimer.Stop();
-
                     _filesCopied++;
-                    _totalEncryptionTime += encTime;
 
                     lock (_logLock)
                     {
                         state.nbFilesLeftToDo = state.totalFilesToCopy - _filesCopied;
-                        state.time = DateTime.Now;
                         logger.WriteLog(state);
-
-                        LogModel dailyLog = new LogModel
+                        dailyLogger.WriteLog(new LogModel
                         {
                             name = state.name,
                             fileSource = filePath,
@@ -167,23 +198,11 @@ namespace EasySave.Services
                             fileTransferTime = fileTimer.Elapsed.TotalMilliseconds,
                             encryptionTime = encTime,
                             time = DateTime.Now
-                        };
-                        dailyLogger.WriteLog(dailyLog);
+                        });
                     }
                 }
-                finally
-                {
-                    if (isBigFile) SaveServices.BigFileSemaphore.Release();
-                }
+                finally { if (semaphoreAcquired) SaveServices.BigFileSemaphore.Release(); }
             }
-
-            foreach (string dirPath in Directory.GetDirectories(src))
-            {
-                string error = CopyDirectoryRecursive(dirPath, Path.Combine(trg, Path.GetFileName(dirPath)), businessSoftware, encryptedExtensions, state, logger, dailyLogger, progress, currentFileCallback, cancelToken, pauseEvent);
-                if (error != null) return error;
-            }
-
-            return null;
         }
     }
 }

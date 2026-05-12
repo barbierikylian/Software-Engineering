@@ -20,6 +20,7 @@ namespace EasySaveGUI
         private string _status;
         private string _playPauseIcon = "⏸";
         private string _playPauseToolTip = "Pause";
+        private bool _isPlayPauseEnabled = true;
 
         public string Name
         {
@@ -50,6 +51,11 @@ namespace EasySaveGUI
         {
             get => _playPauseToolTip;
             set { _playPauseToolTip = value; OnPropertyChanged(nameof(PlayPauseToolTip)); }
+        }
+        public bool IsPlayPauseEnabled
+        {
+            get => _isPlayPauseEnabled;
+            set { _isPlayPauseEnabled = value; OnPropertyChanged(nameof(IsPlayPauseEnabled)); }
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -296,6 +302,8 @@ namespace EasySaveGUI
                 {
                     if (job.Name == jobName)
                     {
+                        if (job.Status == "Blocked") break;
+
                         if (job.Status == "Running")
                         {
                             _saveVM.PauseJob(jobName);
@@ -321,13 +329,20 @@ namespace EasySaveGUI
             if (sender is Button btn && btn.CommandParameter is string jobName)
             {
                 _saveVM.StopJob(jobName);
+
+                JobProgressInfo jobToRemove = null;
                 foreach (var job in ActiveJobs)
                 {
                     if (job.Name == jobName)
                     {
-                        job.Status = "Stopping...";
+                        jobToRemove = job;
                         break;
                     }
+                }
+
+                if (jobToRemove != null)
+                {
+                    ActiveJobs.Remove(jobToRemove);
                 }
             }
         }
@@ -340,8 +355,9 @@ namespace EasySaveGUI
 
             string businessSoft = TxtBusinessSoft.Text.Trim();
             string encryptedExt = TxtEncryptedExt.Text.Trim();
+            string priorityExt = "";
+
             List<Task> tasks = new List<Task>();
-            List<string> errorMessages = new List<string>();
 
             foreach (Backup job in jobsToRun)
             {
@@ -352,32 +368,67 @@ namespace EasySaveGUI
                     Progress = 0,
                     CurrentFile = "Starting backup...",
                     PlayPauseIcon = "⏸",
-                    PlayPauseToolTip = "Pause"
+                    PlayPauseToolTip = "Pause",
+                    IsPlayPauseEnabled = true
                 };
                 ActiveJobs.Add(jobUI);
 
                 Progress<int> progressObj = new Progress<int>(p => jobUI.Progress = p);
-                Action<string> updateTextObj = text => Application.Current.Dispatcher.Invoke(() => jobUI.CurrentFile = text);
+
+                Action<string> updateTextObj = text => Application.Current.Dispatcher.Invoke(() =>
+                {
+                    if (!ActiveJobs.Contains(jobUI)) return;
+
+                    jobUI.CurrentFile = text;
+
+                    if (text.StartsWith("⏸ Blocked"))
+                    {
+                        jobUI.Status = "Blocked";
+                        jobUI.IsPlayPauseEnabled = false;
+                    }
+                    else if (jobUI.Status == "Blocked" && (text.StartsWith("Copying") || text.StartsWith("Updating") || text.StartsWith("Starting")))
+                    {
+                        jobUI.Status = "Running";
+                        jobUI.IsPlayPauseEnabled = true;
+                    }
+                });
 
                 Task task = Task.Run(async () =>
                 {
-                    string error = await _saveVM.PerformJobsAsync(job.Name, businessSoft, encryptedExt, progressObj, updateTextObj);
+                    string error = await _saveVM.PerformJobsAsync(job.Name, businessSoft, encryptedExt, priorityExt, progressObj, updateTextObj);
 
                     Application.Current.Dispatcher.Invoke(() =>
                     {
+                        if (!ActiveJobs.Contains(jobUI)) return;
+
                         if (!string.IsNullOrEmpty(error))
                         {
-                            if (error == "Job stopped.") jobUI.Status = "Stopped";
+                            if (error == "Job stopped.")
+                            {
+                                ActiveJobs.Remove(jobUI);
+                            }
                             else
                             {
                                 jobUI.Status = "Error";
-                                errorMessages.Add($"[{job.Name}] {error}");
+                                jobUI.CurrentFile = error;
+                                jobUI.IsPlayPauseEnabled = false;
+
+                                if (BannerExecError.Visibility == Visibility.Visible)
+                                {
+                                    TxtBannerExecError.Text += $"\n[{job.Name}] {error}";
+                                }
+                                else
+                                {
+                                    ShowExecError($"[{job.Name}] {error}");
+                                }
                             }
                         }
                         else
                         {
                             jobUI.Status = "Finished";
+                            jobUI.CurrentFile = "Finished";
                             jobUI.Progress = 100;
+                            jobUI.IsPlayPauseEnabled = false;
                         }
                     });
                 });
@@ -387,16 +438,12 @@ namespace EasySaveGUI
 
             await Task.WhenAll(tasks);
 
-            if (errorMessages.Count > 0)
-            {
-                ShowExecError(string.Join("\n", errorMessages));
-            }
-            else
+            SetButtonsEnabled(true);
+
+            if (BannerExecError.Visibility != Visibility.Visible)
             {
                 ShowExecSuccess("All selected tasks have finished processing.");
             }
-
-            SetButtonsEnabled(true);
         }
 
         private void BtnExecute_Click(object sender, RoutedEventArgs e)
