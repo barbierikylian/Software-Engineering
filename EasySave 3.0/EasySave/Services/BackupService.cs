@@ -32,29 +32,36 @@ namespace EasySave.Service
 
         public void SetLogFormat(string format) => _currentLogFormat = format.ToLower();
 
-        public async Task<string> PerformJobsAsync(Backup job, string businessSoftware, string encryptedExtensions, string priorityExtensions = "", IProgress<int> progress = null, Action<string> currentFileCallback = null)
+        public async Task<string> PerformJobsAsync(Backup job, string businessSoftware, string encryptedExtensions, string priorityExtensions, long maxFileSizeBytes, IProgress<int> progress = null, Action<string> currentFileCallback = null)
         {
-            var cts = new CancellationTokenSource();
-            var pauseEvent = new ManualResetEventSlim(true);
+            if (!PauseEvents.ContainsKey(job.Name))
+                PauseEvents[job.Name] = new ManualResetEventSlim(true);
+            if (!CancelTokens.ContainsKey(job.Name))
+                CancelTokens[job.Name] = new CancellationTokenSource();
 
-            CancelTokens[job.Name] = cts;
-            PauseEvents[job.Name] = pauseEvent;
+            var pauseEvent = PauseEvents[job.Name];
+            var cts = CancelTokens[job.Name];
 
             IFormatter formatter = _currentLogFormat == "xml" ? new XmlFormatter() : new JsonFormatter();
-            ILogStrategy liveLogger = new LogLive(StateFilePath, formatter);
-
-            ISaveStrategy strategy = job.Type.ToLower() == "differential"
-                ? new SaveDifferential()
-                : new SaveComplete();
+            ILogStrategy logger = new LogLive(StateFilePath, formatter);
 
             try
             {
-                return await strategy.SaveAsync(job, businessSoftware, encryptedExtensions, priorityExtensions, liveLogger, formatter, progress, currentFileCallback, cts.Token, pauseEvent);
+                ISaveStrategy strategy = job.Type.ToLower() == "differential" ? new SaveDifferential() : new SaveComplete();
+                return await strategy.SaveAsync(job, businessSoftware, encryptedExtensions, priorityExtensions, maxFileSizeBytes, logger, formatter, progress, currentFileCallback, cts.Token, pauseEvent);
+            }
+            catch (OperationCanceledException)
+            {
+                return "Job stopped.";
+            }
+            catch (Exception ex)
+            {
+                return $"Error: {ex.Message}";
             }
             finally
             {
-                CancelTokens.TryRemove(job.Name, out _);
                 PauseEvents.TryRemove(job.Name, out _);
+                CancelTokens.TryRemove(job.Name, out _);
             }
         }
 

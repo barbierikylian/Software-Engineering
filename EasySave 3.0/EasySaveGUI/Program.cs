@@ -40,6 +40,8 @@ namespace EasySaveGUI
                         jobsToExecute.Add(int.Parse(inputUser));
                     }
 
+                    long maxFileSizeBytes = 50 * 1024 * 1024;
+
                     foreach (int jobNum in jobsToExecute)
                     {
                         List<Backup> allJobsList = saveViewModel.GetAllJobs();
@@ -48,7 +50,7 @@ namespace EasySaveGUI
                         if (index >= 0 && index < allJobsList.Count)
                         {
                             string targetName = allJobsList[index].Name;
-                            saveViewModel.PerformJobsAsync(targetName, "", "", "").Wait();
+                            saveViewModel.PerformJobsAsync(targetName, "", "", "", maxFileSizeBytes).Wait();
                         }
                     }
                 }

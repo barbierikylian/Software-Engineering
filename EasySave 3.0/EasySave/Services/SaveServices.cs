@@ -10,6 +10,7 @@ namespace EasySave.Services
     {
         public static SemaphoreSlim BigFileSemaphore = new SemaphoreSlim(1, 1);
         public const long BIG_FILE_THRESHOLD = 50 * 1024 * 1024;
+        public static long PendingPriorityFiles = 0;
 
         private static string GetCryptoSoftPath()
         {

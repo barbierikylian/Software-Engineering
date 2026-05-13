@@ -413,6 +413,9 @@
 
                     <TextBlock x:Name="LblPriorityExt" Text="Priority Extensions" Foreground="{StaticResource TextSecondary}" FontSize="12" Margin="0,0,0,6"/>
                     <TextBox x:Name="TxtPriorityExt" Text=".iso;.png" Margin="0,0,0,24"/>
+                    
+                    <TextBlock x:Name="LblMaxFileSize" Text="Max Parallel File Size (KB)" Foreground="{StaticResource TextSecondary}" FontSize="12" Margin="0,0,0,6"/>
+                    <TextBox x:Name="TxtMaxFileSize" Text="50000" Margin="0,0,0,24"/>
 
                     <Separator Margin="0,0,0,24"/>
 

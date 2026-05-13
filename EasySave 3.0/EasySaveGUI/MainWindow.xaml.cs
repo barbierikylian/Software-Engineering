@@ -373,6 +373,12 @@ namespace EasySaveGUI
             string encryptedExt = TxtEncryptedExt.Text.Trim();
             string priorityExt = TxtPriorityExt.Text.Trim();
 
+            long maxFileSizeBytes = 50 * 1024 * 1024;
+            if (long.TryParse(TxtMaxFileSize.Text.Trim(), out long parsedKb))
+            {
+                maxFileSizeBytes = parsedKb * 1024;
+            }
+
             List<Task> tasks = new List<Task>();
 
             foreach (Backup job in jobsToRun)
@@ -417,7 +423,7 @@ namespace EasySaveGUI
 
                 Task task = Task.Run(async () =>
                 {
-                    string error = await _saveVM.PerformJobsAsync(job.Name, businessSoft, encryptedExt, priorityExt, progressObj, updateTextObj);
+                    string error = await _saveVM.PerformJobsAsync(job.Name, businessSoft, encryptedExt, priorityExt, maxFileSizeBytes, progressObj, updateTextObj);
 
                     Application.Current.Dispatcher.Invoke(() =>
                     {

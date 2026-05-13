@@ -4,7 +4,7 @@ namespace EasyLog
 {
     public interface ILogStrategy
     {
-        
         void WriteLog(LogModel logModel);
+        void RemoveLog(string jobName);
     }
 }

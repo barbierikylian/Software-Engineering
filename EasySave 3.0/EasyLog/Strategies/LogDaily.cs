@@ -54,5 +54,8 @@ namespace EasyLog
                 }
             }
         }
+        public void RemoveLog(string jobName)
+        {
+        }
     }
 }
