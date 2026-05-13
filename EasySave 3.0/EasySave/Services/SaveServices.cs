@@ -23,7 +23,7 @@ namespace EasySave.Services
             return Path.Combine(directory.FullName, "CryptoSoft", "CryptoSoft.exe");
         }
 
-        public static long CopyOrEncrypt(string sourceFile, string destinationFile, string encryptedExtensions, Action<int> onChunkCopied = null, ManualResetEventSlim pauseEvent = null, CancellationToken cancelToken = default)
+        public static long CopyOrEncrypt(string sourceFile, string destinationFile, string encryptedExtensions, Action<int> onChunkCopied = null, Action onPause = null, Action onResume = null, ManualResetEventSlim pauseEvent = null, CancellationToken cancelToken = default)
         {
             string[] extensions = (encryptedExtensions ?? "")
                 .Split(';')
@@ -47,7 +47,17 @@ namespace EasySave.Services
                 while ((bytesRead = sourceStream.Read(buffer, 0, buffer.Length)) > 0)
                 {
                     cancelToken.ThrowIfCancellationRequested();
-                    pauseEvent?.Wait(cancelToken);
+
+                    if (pauseEvent != null && !pauseEvent.IsSet)
+                    {
+                        onPause?.Invoke();
+                        pauseEvent.Wait(cancelToken);
+                        onResume?.Invoke();
+                    }
+                    else
+                    {
+                        pauseEvent?.Wait(cancelToken);
+                    }
 
                     destStream.Write(buffer, 0, bytesRead);
                     onChunkCopied?.Invoke(bytesRead);

@@ -104,7 +104,13 @@ namespace EasySave.Services
                 string ext = Path.GetExtension(f).ToLower();
                 int index = Array.IndexOf(prioExts, ext);
                 return index != -1 ? index : int.MaxValue;
+            }).ThenBy(f =>
+            {
+                long size = new FileInfo(f).Length;
+                return size > SaveServices.BIG_FILE_THRESHOLD ? 1 : 0;
             }).ThenBy(f => f).ToArray();
+
+            Stopwatch updateTimer = Stopwatch.StartNew();
 
             foreach (string filePath in sortedFiles)
             {
@@ -152,9 +158,22 @@ namespace EasySave.Services
                     {
                         if (isBigFile)
                         {
-                            SaveServices.BigFileSemaphore.Wait(cancelToken);
+                            if (!SaveServices.BigFileSemaphore.Wait(0))
+                            {
+                                lock (_logLock)
+                                {
+                                    state.state = "Paused (Big File Limit)";
+                                    logger.WriteLog(state);
+                                }
+                                currentFileCallback?.Invoke($"⏸ Auto Pause: {Path.GetFileName(filePath)}");
+
+                                SaveServices.BigFileSemaphore.Wait(cancelToken);
+
+                                lock (_logLock) { state.state = "Active"; }
+                            }
                             semaphoreAcquired = true;
                         }
+
                         Stopwatch fileTimer = Stopwatch.StartNew();
 
                         long encTime = SaveServices.CopyOrEncrypt(filePath, destPath, encryptedExtensions, (chunkSize) =>
@@ -168,24 +187,79 @@ namespace EasySave.Services
                                     lock (_logLock) { state.state = "Paused (Business Software)"; logger.WriteLog(state); }
                                     currentFileCallback?.Invoke($"⏸ Blocked by process: {businessSoftware}");
                                     wasPausedBySoftware = true;
+
+                                    if (isBigFile && semaphoreAcquired)
+                                    {
+                                        SaveServices.BigFileSemaphore.Release();
+                                        semaphoreAcquired = false;
+                                    }
                                 }
                                 Thread.Sleep(1000);
                             }
                             if (wasPausedBySoftware)
                             {
+                                if (isBigFile && !semaphoreAcquired)
+                                {
+                                    currentFileCallback?.Invoke($"⏸ Auto Pause: {Path.GetFileName(filePath)}");
+                                    SaveServices.BigFileSemaphore.Wait(cancelToken);
+                                    semaphoreAcquired = true;
+                                }
                                 lock (_logLock) { state.state = "Active"; logger.WriteLog(state); }
                             }
 
+                            bool shouldUpdateUI = false;
                             lock (_logLock)
                             {
+                                if (state.state == "Paused (User)") state.state = "Active";
+
                                 _bytesCopied += chunkSize;
                                 if (state.totalFilesSize > 0)
                                     state.progression = (int)((_bytesCopied * 100) / state.totalFilesSize);
                                 state.sizeFileRemaining = state.totalFilesSize - _bytesCopied;
                                 state.time = DateTime.Now;
+
+                                if (updateTimer.ElapsedMilliseconds > 250 || _bytesCopied >= state.totalFilesSize)
+                                {
+                                    logger.WriteLog(state);
+                                    shouldUpdateUI = true;
+                                    updateTimer.Restart();
+                                }
                             }
-                            progress?.Report(state.progression ?? 0);
-                            currentFileCallback?.Invoke($"Updating: {Path.GetFileName(filePath)} ({state.progression}%)");
+
+                            if (shouldUpdateUI)
+                            {
+                                progress?.Report(state.progression ?? 0);
+                                currentFileCallback?.Invoke($"Updating: {Path.GetFileName(filePath)} ({state.progression}%)");
+                            }
+                        },
+                        () =>
+                        {
+                            lock (_logLock)
+                            {
+                                state.state = "Paused (User)";
+                                state.time = DateTime.Now;
+                                logger.WriteLog(state);
+                            }
+                            if (isBigFile && semaphoreAcquired)
+                            {
+                                SaveServices.BigFileSemaphore.Release();
+                                semaphoreAcquired = false;
+                            }
+                        },
+                        () =>
+                        {
+                            if (isBigFile && !semaphoreAcquired)
+                            {
+                                currentFileCallback?.Invoke($"⏸ Auto Pause: {Path.GetFileName(filePath)}");
+                                SaveServices.BigFileSemaphore.Wait(cancelToken);
+                                semaphoreAcquired = true;
+                            }
+                            lock (_logLock)
+                            {
+                                state.state = "Active";
+                                state.time = DateTime.Now;
+                                logger.WriteLog(state);
+                            }
                         }, pauseEvent, cancelToken);
 
                         fileTimer.Stop();
@@ -194,7 +268,13 @@ namespace EasySave.Services
                         lock (_logLock)
                         {
                             state.nbFilesLeftToDo = state.totalFilesToCopy - _filesCopied;
-                            logger.WriteLog(state);
+
+                            if (updateTimer.ElapsedMilliseconds > 250 || _filesCopied == state.totalFilesToCopy)
+                            {
+                                logger.WriteLog(state);
+                                updateTimer.Restart();
+                            }
+
                             dailyLogger.WriteLog(new LogModel
                             {
                                 name = state.name,

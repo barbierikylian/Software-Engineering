@@ -392,7 +392,7 @@ namespace EasySaveGUI
 
                 Progress<int> progressObj = new Progress<int>(p => jobUI.Progress = p);
 
-                Action<string> updateTextObj = text => Application.Current.Dispatcher.Invoke(() =>
+                Action<string> updateTextObj = text => Application.Current.Dispatcher.BeginInvoke(new Action(() =>
                 {
                     if (!ActiveJobs.Contains(jobUI)) return;
 
@@ -413,7 +413,7 @@ namespace EasySaveGUI
                         jobUI.Status = _langVM.GetString("status_running") ?? "Running";
                         jobUI.IsPlayPauseEnabled = true;
                     }
-                });
+                }));
 
                 Task task = Task.Run(async () =>
                 {
