@@ -1,61 +1,111 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
+using System.Net.Http;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace EasyLog
 {
     public class LogDaily : ILogStrategy
     {
-        private static readonly object _dailyFileLock = new object();
-
+        private static readonly object _fileLock = new object();
         private readonly string _logDirectory;
         private readonly IFormatter _formatter;
 
-        public LogDaily(string path) : this(path, new JsonFormatter()) { }
+        public string Destination { get; set; } = "Both";
+        public string ServerUrl { get; set; }
 
-        public LogDaily(string path, IFormatter formatter)
+        private static readonly HttpClient _httpClient = new HttpClient();
+
+        public LogDaily(string logDirectory, IFormatter formatter, string serverUrl)
         {
-            _logDirectory = path;
+            _logDirectory = logDirectory;
             _formatter = formatter;
-            Directory.CreateDirectory(_logDirectory);
+            ServerUrl = serverUrl;
+
+            if (!Directory.Exists(_logDirectory))
+            {
+                Directory.CreateDirectory(_logDirectory);
+            }
         }
 
         public void WriteLog(LogModel logModel)
         {
-            lock (_dailyFileLock)
+            string serializedLog = _formatter.Serialize(logModel);
+
+            if (Destination == "Local" || Destination == "Both")
             {
-                string fileName = DateTime.Now.ToString("yyyy-MM-dd") + "." + _formatter.FileExtension;
-                string fullPath = Path.Combine(_logDirectory, fileName);
+                WriteLocal(serializedLog);
+            }
 
-                string text = _formatter.Serialize(logModel);
+            if (Destination == "Centralized" || Destination == "Both")
+            {
+                SendToDocker(serializedLog);
+            }
+        }
 
-                if (_formatter.FileExtension == "xml")
+        public void RemoveLog(string jobName) { }
+
+        private void WriteLocal(string serializedLog)
+        {
+            string fileName = $"{DateTime.Now:yyyy-MM-dd}.{_formatter.FileExtension}";
+            string filePath = Path.Combine(_logDirectory, fileName);
+
+            lock (_fileLock)
+            {
+                for (int i = 0; i < 5; i++)
                 {
-                    if (!File.Exists(fullPath))
+                    try
                     {
-                        File.WriteAllText(fullPath, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<Logs>\n" + text + "\n</Logs>");
+                        if (_formatter.FileExtension == "xml") WriteXml(filePath, serializedLog);
+                        else WriteJson(filePath, serializedLog);
+                        return;
                     }
-                    else
-                    {
-                        List<string> lines = File.ReadAllLines(fullPath).ToList();
-                        if (lines.Count > 0 && lines.Last().Contains("</Logs>"))
-                        {
-                            lines.RemoveAt(lines.Count - 1);
-                        }
-                        lines.Add(text);
-                        lines.Add("</Logs>");
-                        File.WriteAllLines(fullPath, lines);
-                    }
-                }
-                else
-                {
-                    File.AppendAllText(fullPath, text + "\n");
+                    catch (IOException) { Thread.Sleep(100); }
                 }
             }
         }
-        public void RemoveLog(string jobName)
+
+        private void WriteJson(string filePath, string serializedLog)
         {
+            bool addComma = File.Exists(filePath) && new FileInfo(filePath).Length > 0;
+            using var fs = new FileStream(filePath, FileMode.Append, FileAccess.Write, FileShare.Read);
+            using var sw = new StreamWriter(fs);
+            if (addComma) sw.WriteLine(",");
+            sw.Write(serializedLog);
+        }
+
+        private void WriteXml(string filePath, string serializedLog)
+        {
+            try
+            {
+                XDocument doc;
+                if (!File.Exists(filePath) || new FileInfo(filePath).Length == 0) doc = new XDocument(new XElement("Logs"));
+                else doc = XDocument.Parse(File.ReadAllText(filePath));
+
+                doc.Root?.Add(XElement.Parse(serializedLog));
+                File.WriteAllText(filePath, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" + doc.ToString());
+            }
+            catch
+            {
+                File.AppendAllText(filePath, serializedLog + Environment.NewLine);
+            }
+        }
+
+        private void SendToDocker(string serializedLog)
+        {
+            Task.Run(async () =>
+            {
+                try
+                {
+                    string mediaType = _formatter.FileExtension == "xml" ? "application/xml" : "application/json";
+                    var content = new StringContent(serializedLog, Encoding.UTF8, mediaType);
+                    await _httpClient.PostAsync(ServerUrl, content);
+                }
+                catch { }
+            });
         }
     }
 }

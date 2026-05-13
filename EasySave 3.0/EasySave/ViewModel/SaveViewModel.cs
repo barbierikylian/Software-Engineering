@@ -19,6 +19,10 @@ namespace EasySave.ViewModel
 
         public void SetLogFormat(string format) => backupService.SetLogFormat(format);
 
+        public void SetLogDestination(string destination) => backupService.SetLogDestination(destination);
+
+        public void SetServerUrl(string url) => backupService.SetServerUrl(url);
+
         public bool CanCreateNewJob() => backupService.CanCreateJob();
 
         public void CreateJob(string name, string source, string destination, string type)

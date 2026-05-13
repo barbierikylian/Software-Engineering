@@ -16,7 +16,8 @@ namespace EasySave.Services
         private long _bytesCopied = 0;
         private static readonly object _logLock = new object();
 
-        public async Task<string> SaveAsync(Backup job, string businessSoftware, string encryptedExtensions, string priorityExtensions, long maxFileSizeBytes, ILogStrategy logger, IFormatter formatter, IProgress<int> progress, Action<string> currentFileCallback, CancellationToken cancelToken, ManualResetEventSlim pauseEvent)
+        // --- SIGNATURE MISE À JOUR AVEC logDestination et serverUrl ---
+        public async Task<string> SaveAsync(Backup job, string businessSoftware, string encryptedExtensions, string priorityExtensions, long maxFileSizeBytes, string logDestination, string serverUrl, ILogStrategy logger, IFormatter formatter, IProgress<int> progress, Action<string> currentFileCallback, CancellationToken cancelToken, ManualResetEventSlim pauseEvent)
         {
             LogModel state = new LogModel
             {
@@ -47,7 +48,10 @@ namespace EasySave.Services
 
                 string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
                 string logDir = Path.Combine(appData, "EasySave", "logs");
-                ILogStrategy dailyLogger = new LogDaily(logDir, formatter);
+
+                // --- ON PASSE L'URL AU LOGGER ICI ---
+                LogDaily dailyLogger = new LogDaily(logDir, formatter, serverUrl);
+                dailyLogger.Destination = logDestination;
 
                 var allFiles = Directory.GetFiles(source, "*", SearchOption.AllDirectories);
                 long totalSize = allFiles.Sum(f => new FileInfo(f).Length);

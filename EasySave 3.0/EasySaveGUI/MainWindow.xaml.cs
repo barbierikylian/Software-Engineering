@@ -84,6 +84,7 @@ namespace EasySaveGUI
             ActiveJobs = new ObservableCollection<JobProgressInfo>();
 
             ActiveJobsControl.ItemsSource = ActiveJobs;
+            _saveVM.SetServerUrl(TxtServerUrl.Text);
 
             CmbLanguage.SelectedIndex = 0;
             RefreshGrid();
@@ -510,6 +511,23 @@ namespace EasySaveGUI
         {
             if (GridJobs.SelectedItems.Count > 0)
                 ClearExecBanners();
+        }
+
+        private void RbLogDestination_Checked(object sender, RoutedEventArgs e)
+        {
+            if (_saveVM == null) return;
+            string destination = "Both";
+            if (RbLogLocal.IsChecked == true) destination = "Local";
+            else if (RbLogDocker.IsChecked == true) destination = "Centralized";
+
+            _saveVM.SetLogDestination(destination);
+        }
+        private void TxtServerUrl_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+        {
+            if (_saveVM != null && TxtServerUrl != null)
+            {
+                _saveVM.SetServerUrl(TxtServerUrl.Text);
+            }
         }
     }
 }

@@ -21,6 +21,14 @@ namespace EasySave.Service
         public List<Backup> Jobs { get; private set; } = new();
         private string _currentLogFormat = "json";
 
+        // --- AJOUTS POUR LE RÉSEAU ---
+        private string _logDestination = "Both";
+        private string _serverUrl = "http://localhost:8080/api/logs";
+
+        public void SetLogDestination(string destination) => _logDestination = destination;
+        public void SetServerUrl(string url) => _serverUrl = url;
+        // -----------------------------
+
         public ConcurrentDictionary<string, CancellationTokenSource> CancelTokens { get; } = new();
         public ConcurrentDictionary<string, ManualResetEventSlim> PauseEvents { get; } = new();
 
@@ -48,7 +56,8 @@ namespace EasySave.Service
             try
             {
                 ISaveStrategy strategy = job.Type.ToLower() == "differential" ? new SaveDifferential() : new SaveComplete();
-                return await strategy.SaveAsync(job, businessSoftware, encryptedExtensions, priorityExtensions, maxFileSizeBytes, logger, formatter, progress, currentFileCallback, cts.Token, pauseEvent);
+                // --- ON PASSE LES VARIABLES ICI ---
+                return await strategy.SaveAsync(job, businessSoftware, encryptedExtensions, priorityExtensions, maxFileSizeBytes, _logDestination, _serverUrl, logger, formatter, progress, currentFileCallback, cts.Token, pauseEvent);
             }
             catch (OperationCanceledException)
             {
