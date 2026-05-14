@@ -23,6 +23,8 @@ namespace EasySave.ViewModel
 
         public void SetServerUrl(string url) => backupService.SetServerUrl(url);
 
+        public void SetLogUserName(string name) => backupService.SetLogUserName(name);
+
         public bool CanCreateNewJob() => backupService.CanCreateJob();
 
         public void CreateJob(string name, string source, string destination, string type)

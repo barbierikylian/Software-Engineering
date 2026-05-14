@@ -73,5 +73,13 @@
   "text_copying": "Copying: ",
   "text_updating": "Updating: ",
   "text_blocked_by": "⏸ Blocked by process: ",
-  "error_source_missing": "Error: Source directory does not exist."
+  "error_source_missing": "Error: Source directory does not exist.",
+  "label_username": "Log Username",
+  "tooltip_username": "Leave empty to use Windows session name",
+  "label_log_destination": "Log Destination",
+  "label_server_url": "Centralized Server URL",
+  "label_max_file_size": "Max Parallel File Size (KB)",
+  "radio_local": "Local",
+  "radio_server": "Server",
+  "radio_both": "Both"
 }

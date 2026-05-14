@@ -73,5 +73,13 @@
   "text_copying": "Copie : ",
   "text_updating": "Mise à jour : ",
   "text_blocked_by": "⏸ Bloqué par le processus : ",
-  "error_source_missing": "Erreur : Le répertoire source n'existe pas."
+  "error_source_missing": "Erreur : Le répertoire source n'existe pas.",
+  "label_username": "Nom d'utilisateur (Logs)",
+  "tooltip_username": "Laissez vide pour utiliser le nom de session Windows",
+  "label_log_destination": "Destination des logs",
+  "label_server_url": "URL du serveur centralisé",
+  "label_max_file_size": "Taille max en parallèle (Ko)",
+  "radio_local": "Local",
+  "radio_server": "Serveur",
+  "radio_both": "Les deux"
 }

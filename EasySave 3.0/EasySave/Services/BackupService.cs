@@ -18,16 +18,17 @@ namespace EasySave.Service
         private static readonly string JobsFilePath = Path.Combine(ConfigDir, "Listjobs.json");
         private static readonly string StateFilePath = Path.Combine(ConfigDir, "state");
 
+
         public List<Backup> Jobs { get; private set; } = new();
         private string _currentLogFormat = "json";
 
-        // --- AJOUTS POUR LE RÉSEAU ---
         private string _logDestination = "Both";
         private string _serverUrl = "http://localhost:8080/api/logs";
+        private string _logUserName = Environment.UserName;
 
         public void SetLogDestination(string destination) => _logDestination = destination;
         public void SetServerUrl(string url) => _serverUrl = url;
-        // -----------------------------
+        public void SetLogUserName(string name) => _logUserName = string.IsNullOrWhiteSpace(name) ? Environment.UserName : name;
 
         public ConcurrentDictionary<string, CancellationTokenSource> CancelTokens { get; } = new();
         public ConcurrentDictionary<string, ManualResetEventSlim> PauseEvents { get; } = new();
@@ -56,8 +57,7 @@ namespace EasySave.Service
             try
             {
                 ISaveStrategy strategy = job.Type.ToLower() == "differential" ? new SaveDifferential() : new SaveComplete();
-                // --- ON PASSE LES VARIABLES ICI ---
-                return await strategy.SaveAsync(job, businessSoftware, encryptedExtensions, priorityExtensions, maxFileSizeBytes, _logDestination, _serverUrl, logger, formatter, progress, currentFileCallback, cts.Token, pauseEvent);
+                return await strategy.SaveAsync(job, businessSoftware, encryptedExtensions, priorityExtensions, maxFileSizeBytes, _logDestination, _serverUrl, _logUserName, logger, formatter, progress, currentFileCallback, cts.Token, pauseEvent);
             }
             catch (OperationCanceledException)
             {

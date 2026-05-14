@@ -1,4 +1,8 @@
+using System;
 using System.IO;
+using System.Xml.Linq;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 
 var builder = WebApplication.CreateBuilder(args);
 var app = builder.Build();
@@ -16,17 +20,37 @@ app.MapPost("/api/logs", async (HttpContext context) =>
     Console.WriteLine($"[LOG RECEIVED] {DateTime.Now:HH:mm:ss} : {body}");
 
     string date = DateTime.Now.ToString("yyyy-MM-dd");
-    string ext = context.Request.ContentType == "application/xml" ? "xml" : "json";
+    bool isXml = context.Request.ContentType != null && context.Request.ContentType.Contains("xml");
+    string ext = isXml ? "xml" : "json";
     string logFile = Path.Combine(logDir, $"centralized_log_{date}.{ext}");
 
     lock (_fileLock)
     {
-        using var writer = new StreamWriter(logFile, true);
-        if (ext == "json" && new FileInfo(logFile).Length > 0)
+        if (isXml)
         {
-            writer.WriteLine(",");
+            try
+            {
+                XDocument doc;
+                if (!File.Exists(logFile) || new FileInfo(logFile).Length == 0)
+                    doc = new XDocument(new XElement("Logs"));
+                else
+                    doc = XDocument.Parse(File.ReadAllText(logFile));
+
+                doc.Root?.Add(XElement.Parse(body));
+                File.WriteAllText(logFile, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" + doc.ToString());
+            }
+            catch
+            {
+                File.AppendAllText(logFile, body + Environment.NewLine);
+            }
         }
-        writer.WriteLine(body);
+        else
+        {
+            bool addComma = File.Exists(logFile) && new FileInfo(logFile).Length > 0;
+            using var writer = new StreamWriter(logFile, true);
+            if (addComma) writer.WriteLine(",");
+            writer.WriteLine(body);
+        }
     }
     return Results.Ok();
 });

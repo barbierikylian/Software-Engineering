@@ -84,11 +84,24 @@ namespace EasySaveGUI
             ActiveJobs = new ObservableCollection<JobProgressInfo>();
 
             ActiveJobsControl.ItemsSource = ActiveJobs;
-            _saveVM.SetServerUrl(TxtServerUrl.Text);
+
+            UpdateUserInfo();
+            if (_saveVM != null && TxtServerUrl != null)
+            {
+                _saveVM.SetServerUrl(TxtServerUrl.Text);
+            }
 
             CmbLanguage.SelectedIndex = 0;
             RefreshGrid();
             UpdateLogPath();
+        }
+
+        private void UpdateUserInfo()
+        {
+            string finalName = string.IsNullOrWhiteSpace(TxtUserName?.Text)
+                               ? Environment.UserName
+                               : TxtUserName.Text;
+            _saveVM?.SetLogUserName(finalName);
         }
 
         private void UpdateLanguageUI()
@@ -121,6 +134,16 @@ namespace EasySaveGUI
                 LblPermanentHint.Text = _langVM.GetString("hint_ctrl_click");
                 LblEncryptedExt.Text = _langVM.GetString("label_encrypted_ext");
                 LblPriorityExt.Text = _langVM.GetString("label_priority_ext") ?? "Priority Extensions";
+
+                if (LblUserName != null) LblUserName.Text = _langVM.GetString("label_username") ?? "Log Username";
+                if (TxtUserName != null) TxtUserName.ToolTip = _langVM.GetString("tooltip_username") ?? "Leave empty to use Windows session name";
+                if (LblMaxFileSize != null) LblMaxFileSize.Text = _langVM.GetString("label_max_file_size") ?? "Max Parallel File Size (KB)";
+                if (LblLogDestination != null) LblLogDestination.Text = _langVM.GetString("label_log_destination") ?? "Log Destination";
+                if (LblServerUrl != null) LblServerUrl.Text = _langVM.GetString("label_server_url") ?? "Centralized Server URL";
+
+                if (RbLogLocal != null) RbLogLocal.Content = _langVM.GetString("radio_local") ?? "Local";
+                if (RbLogServer != null) RbLogServer.Content = _langVM.GetString("radio_server") ?? "Server";
+                if (RbLogBoth != null) RbLogBoth.Content = _langVM.GetString("radio_both") ?? "Both";
 
                 if (CbiTypeFull != null) CbiTypeFull.Content = _langVM.GetString("type_full");
                 if (CbiTypeDiff != null) CbiTypeDiff.Content = _langVM.GetString("type_diff");
@@ -249,6 +272,11 @@ namespace EasySaveGUI
             BtnDelete.IsEnabled = enabled;
             RbJson.IsEnabled = enabled;
             RbXml.IsEnabled = enabled;
+        }
+
+        private void TxtUserName_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+        {
+            UpdateUserInfo();
         }
 
         private void BtnAdd_Click(object sender, RoutedEventArgs e)
@@ -518,10 +546,11 @@ namespace EasySaveGUI
             if (_saveVM == null) return;
             string destination = "Both";
             if (RbLogLocal.IsChecked == true) destination = "Local";
-            else if (RbLogDocker.IsChecked == true) destination = "Centralized";
+            else if (RbLogServer.IsChecked == true) destination = "Centralized";
 
             _saveVM.SetLogDestination(destination);
         }
+
         private void TxtServerUrl_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
         {
             if (_saveVM != null && TxtServerUrl != null)

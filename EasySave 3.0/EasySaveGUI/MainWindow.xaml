@@ -343,6 +343,9 @@
                         <ComboBoxItem Content="English" Tag="en" IsSelected="True"/>
                         <ComboBoxItem Content="Français" Tag="fr"/>
                     </ComboBox>
+                    <Separator Margin="0,0,0,24"/>
+                    <TextBlock x:Name="LblUserName" Text="Log Username" Foreground="{StaticResource TextSecondary}" FontSize="12" Margin="0,0,0,4"/>
+                    <TextBox x:Name="TxtUserName" Margin="0,0,0,24" TextChanged="TxtUserName_TextChanged" ToolTip="Leave empty to use Windows session name"/>
 
                     <Separator Margin="0,0,0,24"/>
 
@@ -442,16 +445,12 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <RadioButton x:Name="RbLogLocal" Grid.Column="0" Content="Local" Style="{StaticResource RadioFlat}" Checked="RbLogDestination_Checked"/>
-                        <RadioButton x:Name="RbLogDocker" Grid.Column="2" Content="Docker" Style="{StaticResource RadioFlat}" Checked="RbLogDestination_Checked"/>
+                        <RadioButton x:Name="RbLogServer" Grid.Column="2" Content="Server" Style="{StaticResource RadioFlat}" Checked="RbLogDestination_Checked"/>
                         <RadioButton x:Name="RbLogBoth" Grid.Column="4" Content="Both" IsChecked="True" Style="{StaticResource RadioFlat}" Checked="RbLogDestination_Checked"/>
                     </Grid>
                     <StackPanel Margin="0,10,0,0">
-                        <TextBlock Text="URL du serveur centralisé :" FontWeight="Bold" Margin="0,0,0,5"/>
-                        <TextBox x:Name="TxtServerUrl" 
-             Text="http://localhost:8080/api/logs" 
-             Width="300" 
-             HorizontalAlignment="Left" 
-             TextChanged="TxtServerUrl_TextChanged"/>
+                        <TextBlock x:Name="LblServerUrl" Text="Centralized Server URL" Foreground="{StaticResource TextSecondary}" FontSize="12" Margin="0,0,0,4"/>
+                        <TextBox x:Name="TxtServerUrl" Text="http://localhost:8080/api/logs" Margin="0,0,0,24" TextChanged="TxtServerUrl_TextChanged"/>
                     </StackPanel>
 
                     <TextBlock x:Name="LblLogLocation" Text="Log Location" Foreground="{StaticResource TextSecondary}" FontSize="12" Margin="0,0,0,8"/>

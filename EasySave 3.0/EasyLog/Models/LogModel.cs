@@ -20,6 +20,9 @@ namespace EasyLog
 
         // For Daily
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string userName { get; set; }
+
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public DateTime? time { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
