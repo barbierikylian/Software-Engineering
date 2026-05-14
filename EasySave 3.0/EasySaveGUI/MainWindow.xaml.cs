@@ -1,4 +1,5 @@
-﻿using EasySave.Model;
+﻿using EasyLog;
+using EasySave.Model;
 using EasySave.ViewModel;
 using System;
 using System.Collections.Generic;
@@ -6,6 +7,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -25,55 +27,59 @@ namespace EasySaveGUI
 
         public string Name
         {
-            get => _name;
-            set { _name = value; OnPropertyChanged(nameof(Name)); }
+            get { return _name; }
+            set { _name = value; OnPropertyChanged("Name"); }
         }
         public int Progress
         {
-            get => _progress;
-            set { _progress = value; OnPropertyChanged(nameof(Progress)); }
+            get { return _progress; }
+            set { _progress = value; OnPropertyChanged("Progress"); }
         }
         public string CurrentFile
         {
-            get => _currentFile;
-            set { _currentFile = value; OnPropertyChanged(nameof(CurrentFile)); }
+            get { return _currentFile; }
+            set { _currentFile = value; OnPropertyChanged("CurrentFile"); }
         }
         public string Status
         {
-            get => _status;
-            set { _status = value; OnPropertyChanged(nameof(Status)); }
+            get { return _status; }
+            set { _status = value; OnPropertyChanged("Status"); }
         }
         public string PlayPauseIcon
         {
-            get => _playPauseIcon;
-            set { _playPauseIcon = value; OnPropertyChanged(nameof(PlayPauseIcon)); }
+            get { return _playPauseIcon; }
+            set { _playPauseIcon = value; OnPropertyChanged("PlayPauseIcon"); }
         }
         public string PlayPauseToolTip
         {
-            get => _playPauseToolTip;
-            set { _playPauseToolTip = value; OnPropertyChanged(nameof(PlayPauseToolTip)); }
+            get { return _playPauseToolTip; }
+            set { _playPauseToolTip = value; OnPropertyChanged("PlayPauseToolTip"); }
         }
         public string StopToolTip
         {
-            get => _stopToolTip;
-            set { _stopToolTip = value; OnPropertyChanged(nameof(StopToolTip)); }
+            get { return _stopToolTip; }
+            set { _stopToolTip = value; OnPropertyChanged("StopToolTip"); }
         }
         public bool IsPlayPauseEnabled
         {
-            get => _isPlayPauseEnabled;
-            set { _isPlayPauseEnabled = value; OnPropertyChanged(nameof(IsPlayPauseEnabled)); }
+            get { return _isPlayPauseEnabled; }
+            set { _isPlayPauseEnabled = value; OnPropertyChanged("IsPlayPauseEnabled"); }
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
-        protected void OnPropertyChanged(string propertyName) =>
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        protected void OnPropertyChanged(string propertyName)
+        {
+            if (PropertyChanged != null)
+            {
+                PropertyChanged.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            }
+        }
     }
 
     public partial class MainWindow : Window
     {
         private SaveViewModel _saveVM;
         private LanguageViewModel _langVM;
-
         public ObservableCollection<JobProgressInfo> ActiveJobs { get; set; }
 
         public MainWindow()
@@ -98,10 +104,12 @@ namespace EasySaveGUI
 
         private void UpdateUserInfo()
         {
-            string finalName = string.IsNullOrWhiteSpace(TxtUserName?.Text)
-                               ? Environment.UserName
-                               : TxtUserName.Text;
-            _saveVM?.SetLogUserName(finalName);
+            string finalName = TxtUserName.Text;
+            if (string.IsNullOrWhiteSpace(finalName))
+            {
+                finalName = Environment.UserName;
+            }
+            _saveVM.SetLogUserName(finalName);
         }
 
         private void UpdateLanguageUI()
@@ -120,7 +128,7 @@ namespace EasySaveGUI
                 LblLogsTitle.Text = _langVM.GetString("label_logs_title");
                 LblLogFormat.Text = _langVM.GetString("label_log_format");
                 LblLogLocation.Text = _langVM.GetString("label_log_location");
-                LblDataLocation.Text = _langVM.GetString("label_data_location") ?? "Data Location";
+                LblDataLocation.Text = _langVM.GetString("label_data_location");
                 BtnAdd.Content = _langVM.GetString("menu_create");
                 BtnDelete.Content = _langVM.GetString("menu_delete");
                 BtnExecute.Content = _langVM.GetString("menu_execute");
@@ -133,22 +141,22 @@ namespace EasySaveGUI
                 ColType.Header = _langVM.GetString("label_type");
                 LblPermanentHint.Text = _langVM.GetString("hint_ctrl_click");
                 LblEncryptedExt.Text = _langVM.GetString("label_encrypted_ext");
-                LblPriorityExt.Text = _langVM.GetString("label_priority_ext") ?? "Priority Extensions";
+                LblPriorityExt.Text = _langVM.GetString("label_priority_ext");
 
-                if (LblUserName != null) LblUserName.Text = _langVM.GetString("label_username") ?? "Log Username";
-                if (TxtUserName != null) TxtUserName.ToolTip = _langVM.GetString("tooltip_username") ?? "Leave empty to use Windows session name";
-                if (LblMaxFileSize != null) LblMaxFileSize.Text = _langVM.GetString("label_max_file_size") ?? "Max Parallel File Size (KB)";
-                if (LblLogDestination != null) LblLogDestination.Text = _langVM.GetString("label_log_destination") ?? "Log Destination";
-                if (LblServerUrl != null) LblServerUrl.Text = _langVM.GetString("label_server_url") ?? "Centralized Server URL";
+                if (LblUserName != null) LblUserName.Text = _langVM.GetString("label_username");
+                if (TxtUserName != null) TxtUserName.ToolTip = _langVM.GetString("tooltip_username");
+                if (LblMaxFileSize != null) LblMaxFileSize.Text = _langVM.GetString("label_max_file_size");
+                if (LblLogDestination != null) LblLogDestination.Text = _langVM.GetString("label_log_destination");
+                if (LblServerUrl != null) LblServerUrl.Text = _langVM.GetString("label_server_url");
 
-                if (RbLogLocal != null) RbLogLocal.Content = _langVM.GetString("radio_local") ?? "Local";
-                if (RbLogServer != null) RbLogServer.Content = _langVM.GetString("radio_server") ?? "Server";
-                if (RbLogBoth != null) RbLogBoth.Content = _langVM.GetString("radio_both") ?? "Both";
+                if (RbLogLocal != null) RbLogLocal.Content = _langVM.GetString("radio_local");
+                if (RbLogServer != null) RbLogServer.Content = _langVM.GetString("radio_server");
+                if (RbLogBoth != null) RbLogBoth.Content = _langVM.GetString("radio_both");
 
                 if (CbiTypeFull != null) CbiTypeFull.Content = _langVM.GetString("type_full");
                 if (CbiTypeDiff != null) CbiTypeDiff.Content = _langVM.GetString("type_diff");
 
-                string closeToolTip = _langVM.GetString("tooltip_close") ?? "Close";
+                string closeToolTip = _langVM.GetString("tooltip_close");
                 if (BtnCloseBannerError != null) BtnCloseBannerError.ToolTip = closeToolTip;
                 if (BtnCloseBannerSuccess != null) BtnCloseBannerSuccess.ToolTip = closeToolTip;
                 if (BtnCloseBannerExecError != null) BtnCloseBannerExecError.ToolTip = closeToolTip;
@@ -160,7 +168,8 @@ namespace EasySaveGUI
 
         private void CmbLanguage_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (CmbLanguage.SelectedItem is ComboBoxItem selectedItem && _langVM != null)
+            ComboBoxItem selectedItem = CmbLanguage.SelectedItem as ComboBoxItem;
+            if (selectedItem != null && _langVM != null)
             {
                 _langVM.UpdateLanguage(selectedItem.Tag.ToString());
                 UpdateLanguageUI();
@@ -183,21 +192,22 @@ namespace EasySaveGUI
         private void RbLogFormat_Checked(object sender, RoutedEventArgs e)
         {
             if (_saveVM == null) return;
-            string format = RbJson.IsChecked == true ? "json" : "xml";
+            string format = "json";
+            if (RbXml.IsChecked == true) format = "xml";
             _saveVM.SetLogFormat(format);
         }
 
         private void OpenLogsFolder_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
             string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "EasySave", "Logs");
-            if (!Directory.Exists(path)) Directory.CreateDirectory(path);
+            if (Directory.Exists(path) == false) Directory.CreateDirectory(path);
             Process.Start("explorer.exe", path);
         }
 
         private void OpenDataFolder_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
             string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "EasySave", "data");
-            if (!Directory.Exists(path)) Directory.CreateDirectory(path);
+            if (Directory.Exists(path) == false) Directory.CreateDirectory(path);
             Process.Start("explorer.exe", path);
         }
 
@@ -274,7 +284,7 @@ namespace EasySaveGUI
             RbXml.IsEnabled = enabled;
         }
 
-        private void TxtUserName_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+        private void TxtUserName_TextChanged(object sender, TextChangedEventArgs e)
         {
             UpdateUserInfo();
         }
@@ -299,20 +309,25 @@ namespace EasySaveGUI
                 ShowFieldError(ErrTarget, _langVM.GetString("error_dest_required"));
                 valid = false;
             }
-            if (!valid) return;
+            if (valid == false) return;
 
-            if (!_saveVM.CanCreateNewJob())
+            if (_saveVM.CanCreateNewJob() == false)
             {
                 ShowFormError(_langVM.GetString("error_max_jobs"));
                 return;
             }
 
             string name = TxtName.Text.Trim();
-            string selectedType = ((ComboBoxItem)CmbType.SelectedItem).Tag.ToString();
+            ComboBoxItem item = (ComboBoxItem)CmbType.SelectedItem;
+            string selectedType = item.Tag.ToString();
 
             _saveVM.CreateJob(name, TxtSource.Text.Trim(), TxtTarget.Text.Trim(), selectedType);
             RefreshGrid();
-            ShowFormSuccess(_langVM.GetString("success_create")?.Replace("{name}", name));
+
+            string successMsg = _langVM.GetString("success_create");
+            if (successMsg != null) successMsg = successMsg.Replace("{name}", name);
+            ShowFormSuccess(successMsg);
+
             TxtName.Clear();
             TxtSource.Clear();
             TxtTarget.Clear();
@@ -329,7 +344,8 @@ namespace EasySaveGUI
             List<Backup> selectedJobs = new List<Backup>();
             foreach (object item in GridJobs.SelectedItems)
             {
-                if (item is Backup job) selectedJobs.Add(job);
+                Backup job = item as Backup;
+                if (job != null) selectedJobs.Add(job);
             }
 
             foreach (Backup job in selectedJobs)
@@ -338,32 +354,40 @@ namespace EasySaveGUI
             }
 
             RefreshGrid();
-            ShowExecSuccess(_langVM.GetString("success_delete")?.Replace("{name}", $"{selectedJobs.Count} job(s)"));
+
+            string successMsg = _langVM.GetString("success_delete");
+            if (successMsg != null) successMsg = successMsg.Replace("{name}", selectedJobs.Count.ToString() + " job(s)");
+            ShowExecSuccess(successMsg);
         }
 
         private void BtnPlayPause_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is Button btn && btn.CommandParameter is string jobName)
+            Button btn = sender as Button;
+            if (btn != null)
             {
-                foreach (var job in ActiveJobs)
+                string jobName = btn.CommandParameter as string;
+                if (jobName != null)
                 {
-                    if (job.Name == jobName)
+                    foreach (JobProgressInfo job in ActiveJobs)
                     {
-                        if (job.PlayPauseIcon == "⏸")
+                        if (job.Name == jobName)
                         {
-                            _saveVM.PauseJob(jobName);
-                            job.Status = _langVM.GetString("status_paused") ?? "Paused";
-                            job.PlayPauseIcon = "▶";
-                            job.PlayPauseToolTip = _langVM.GetString("tooltip_play") ?? "Play";
+                            if (job.PlayPauseIcon == "⏸")
+                            {
+                                _saveVM.PauseJob(jobName);
+                                job.Status = _langVM.GetString("status_paused");
+                                job.PlayPauseIcon = "▶";
+                                job.PlayPauseToolTip = _langVM.GetString("tooltip_play");
+                            }
+                            else
+                            {
+                                _saveVM.ResumeJob(jobName);
+                                job.Status = _langVM.GetString("status_running");
+                                job.PlayPauseIcon = "⏸";
+                                job.PlayPauseToolTip = _langVM.GetString("tooltip_pause");
+                            }
+                            break;
                         }
-                        else
-                        {
-                            _saveVM.ResumeJob(jobName);
-                            job.Status = _langVM.GetString("status_running") ?? "Running";
-                            job.PlayPauseIcon = "⏸";
-                            job.PlayPauseToolTip = _langVM.GetString("tooltip_pause") ?? "Pause";
-                        }
-                        break;
                     }
                 }
             }
@@ -371,23 +395,26 @@ namespace EasySaveGUI
 
         private void BtnStop_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is Button btn && btn.CommandParameter is string jobName)
+            Button btn = sender as Button;
+            if (btn != null)
             {
-                _saveVM.StopJob(jobName);
-
-                JobProgressInfo jobToRemove = null;
-                foreach (var job in ActiveJobs)
+                string jobName = btn.CommandParameter as string;
+                if (jobName != null)
                 {
-                    if (job.Name == jobName)
+                    _saveVM.StopJob(jobName);
+                    JobProgressInfo jobToRemove = null;
+                    foreach (JobProgressInfo job in ActiveJobs)
                     {
-                        jobToRemove = job;
-                        break;
+                        if (job.Name == jobName)
+                        {
+                            jobToRemove = job;
+                            break;
+                        }
                     }
-                }
-
-                if (jobToRemove != null)
-                {
-                    ActiveJobs.Remove(jobToRemove);
+                    if (jobToRemove != null)
+                    {
+                        ActiveJobs.Remove(jobToRemove);
+                    }
                 }
             }
         }
@@ -402,8 +429,9 @@ namespace EasySaveGUI
             string encryptedExt = TxtEncryptedExt.Text.Trim();
             string priorityExt = TxtPriorityExt.Text.Trim();
 
-            long maxFileSizeBytes = 50 * 1024 * 1024;
-            if (long.TryParse(TxtMaxFileSize.Text.Trim(), out long parsedKb))
+            long maxFileSizeBytes = 52428800;
+            long parsedKb;
+            if (long.TryParse(TxtMaxFileSize.Text.Trim(), out parsedKb))
             {
                 maxFileSizeBytes = parsedKb * 1024;
             }
@@ -412,40 +440,39 @@ namespace EasySaveGUI
 
             foreach (Backup job in jobsToRun)
             {
-                JobProgressInfo jobUI = new JobProgressInfo
-                {
-                    Name = job.Name,
-                    Status = _langVM.GetString("status_running") ?? "Running",
-                    Progress = 0,
-                    CurrentFile = _langVM.GetString("file_starting") ?? "Starting backup...",
-                    PlayPauseIcon = "⏸",
-                    PlayPauseToolTip = _langVM.GetString("tooltip_pause") ?? "Pause",
-                    StopToolTip = _langVM.GetString("tooltip_stop") ?? "Stop",
-                    IsPlayPauseEnabled = true
-                };
+                JobProgressInfo jobUI = new JobProgressInfo();
+                jobUI.Name = job.Name;
+                jobUI.Status = _langVM.GetString("status_running");
+                jobUI.Progress = 0;
+                jobUI.CurrentFile = _langVM.GetString("file_starting");
+                jobUI.PlayPauseIcon = "⏸";
+                jobUI.PlayPauseToolTip = _langVM.GetString("tooltip_pause");
+                jobUI.StopToolTip = _langVM.GetString("tooltip_stop");
+                jobUI.IsPlayPauseEnabled = true;
+
                 ActiveJobs.Add(jobUI);
 
                 Progress<int> progressObj = new Progress<int>(p => jobUI.Progress = p);
 
                 Action<string> updateTextObj = text => Application.Current.Dispatcher.BeginInvoke(new Action(() =>
                 {
-                    if (!ActiveJobs.Contains(jobUI)) return;
+                    if (ActiveJobs.Contains(jobUI) == false) return;
 
-                    string translatedText = text
-                        .Replace("Copying:", _langVM.GetString("text_copying") ?? "Copying:")
-                        .Replace("Updating:", _langVM.GetString("text_updating") ?? "Updating:")
-                        .Replace("⏸ Blocked by process:", _langVM.GetString("text_blocked_by") ?? "⏸ Blocked by process:");
+                    string translatedText = text;
+                    translatedText = translatedText.Replace("Copying:", _langVM.GetString("text_copying"));
+                    translatedText = translatedText.Replace("Updating:", _langVM.GetString("text_updating"));
+                    translatedText = translatedText.Replace("⏸ Blocked by process:", _langVM.GetString("text_blocked_by"));
 
                     jobUI.CurrentFile = translatedText;
 
                     if (text.StartsWith("⏸"))
                     {
-                        jobUI.Status = _langVM.GetString("status_blocked") ?? "Blocked";
+                        jobUI.Status = _langVM.GetString("status_blocked");
                         jobUI.IsPlayPauseEnabled = false;
                     }
-                    else if (!jobUI.IsPlayPauseEnabled && jobUI.PlayPauseIcon == "⏸" && !text.StartsWith("⏸"))
+                    else if (jobUI.IsPlayPauseEnabled == false && jobUI.PlayPauseIcon == "⏸" && text.StartsWith("⏸") == false)
                     {
-                        jobUI.Status = _langVM.GetString("status_running") ?? "Running";
+                        jobUI.Status = _langVM.GetString("status_running");
                         jobUI.IsPlayPauseEnabled = true;
                     }
                 }));
@@ -456,9 +483,9 @@ namespace EasySaveGUI
 
                     Application.Current.Dispatcher.Invoke(() =>
                     {
-                        if (!ActiveJobs.Contains(jobUI)) return;
+                        if (ActiveJobs.Contains(jobUI) == false) return;
 
-                        if (!string.IsNullOrEmpty(error))
+                        if (string.IsNullOrEmpty(error) == false)
                         {
                             if (error == "Job stopped.")
                             {
@@ -467,26 +494,28 @@ namespace EasySaveGUI
                             else
                             {
                                 if (error.StartsWith("Error: Source directory does not exist."))
-                                    error = _langVM.GetString("error_source_missing") ?? error;
+                                {
+                                    error = _langVM.GetString("error_source_missing");
+                                }
 
-                                jobUI.Status = _langVM.GetString("status_error") ?? "Error";
+                                jobUI.Status = _langVM.GetString("status_error");
                                 jobUI.CurrentFile = error;
                                 jobUI.IsPlayPauseEnabled = false;
 
                                 if (BannerExecError.Visibility == Visibility.Visible)
                                 {
-                                    TxtBannerExecError.Text += $"\n[{job.Name}] {error}";
+                                    TxtBannerExecError.Text += "\n[" + job.Name + "] " + error;
                                 }
                                 else
                                 {
-                                    ShowExecError($"[{job.Name}] {error}");
+                                    ShowExecError("[" + job.Name + "] " + error);
                                 }
                             }
                         }
                         else
                         {
-                            jobUI.Status = _langVM.GetString("status_finished") ?? "Finished";
-                            jobUI.CurrentFile = _langVM.GetString("status_finished") ?? "Finished";
+                            jobUI.Status = _langVM.GetString("status_finished");
+                            jobUI.CurrentFile = _langVM.GetString("status_finished");
                             jobUI.Progress = 100;
                             jobUI.IsPlayPauseEnabled = false;
                         }
@@ -497,12 +526,11 @@ namespace EasySaveGUI
             }
 
             await Task.WhenAll(tasks);
-
             SetButtonsEnabled(true);
 
             if (BannerExecError.Visibility != Visibility.Visible)
             {
-                ShowExecSuccess(_langVM.GetString("success_all_tasks") ?? "All selected tasks have finished processing.");
+                ShowExecSuccess(_langVM.GetString("success_all_tasks"));
             }
         }
 
@@ -517,7 +545,8 @@ namespace EasySaveGUI
             List<Backup> selectedJobs = new List<Backup>();
             foreach (object item in GridJobs.SelectedItems)
             {
-                if (item is Backup job) selectedJobs.Add(job);
+                Backup job = item as Backup;
+                if (job != null) selectedJobs.Add(job);
             }
 
             RunJobsInParallel(selectedJobs);
@@ -538,7 +567,9 @@ namespace EasySaveGUI
         private void GridJobs_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (GridJobs.SelectedItems.Count > 0)
+            {
                 ClearExecBanners();
+            }
         }
 
         private void RbLogDestination_Checked(object sender, RoutedEventArgs e)
@@ -551,7 +582,7 @@ namespace EasySaveGUI
             _saveVM.SetLogDestination(destination);
         }
 
-        private void TxtServerUrl_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+        private void TxtServerUrl_TextChanged(object sender, TextChangedEventArgs e)
         {
             if (_saveVM != null && TxtServerUrl != null)
             {

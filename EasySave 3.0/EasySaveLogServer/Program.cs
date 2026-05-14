@@ -4,25 +4,45 @@ using System.Xml.Linq;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 
-var builder = WebApplication.CreateBuilder(args);
-var app = builder.Build();
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+WebApplication app = builder.Build();
 
 string logDir = Path.Combine(Directory.GetCurrentDirectory(), "logs");
-if (!Directory.Exists(logDir)) Directory.CreateDirectory(logDir);
+if (Directory.Exists(logDir) == false)
+{
+    Directory.CreateDirectory(logDir);
+}
 
 object _fileLock = new object();
 
 app.MapPost("/api/logs", async (HttpContext context) =>
 {
-    using var reader = new StreamReader(context.Request.Body);
-    string body = await reader.ReadToEndAsync();
+    string body;
+    using (StreamReader reader = new StreamReader(context.Request.Body))
+    {
+        body = await reader.ReadToEndAsync();
+    }
 
-    Console.WriteLine($"[LOG RECEIVED] {DateTime.Now:HH:mm:ss} : {body}");
+    Console.WriteLine("[LOG RECEIVED] " + DateTime.Now.ToString("HH:mm:ss") + " : " + body);
 
     string date = DateTime.Now.ToString("yyyy-MM-dd");
-    bool isXml = context.Request.ContentType != null && context.Request.ContentType.Contains("xml");
-    string ext = isXml ? "xml" : "json";
-    string logFile = Path.Combine(logDir, $"centralized_log_{date}.{ext}");
+
+    bool isXml = false;
+    if (context.Request.ContentType != null)
+    {
+        if (context.Request.ContentType.Contains("xml"))
+        {
+            isXml = true;
+        }
+    }
+
+    string ext = "json";
+    if (isXml)
+    {
+        ext = "xml";
+    }
+
+    string logFile = Path.Combine(logDir, "centralized_log_" + date + "." + ext);
 
     lock (_fileLock)
     {
@@ -31,13 +51,34 @@ app.MapPost("/api/logs", async (HttpContext context) =>
             try
             {
                 XDocument doc;
-                if (!File.Exists(logFile) || new FileInfo(logFile).Length == 0)
-                    doc = new XDocument(new XElement("Logs"));
-                else
-                    doc = XDocument.Parse(File.ReadAllText(logFile));
+                bool fileExists = File.Exists(logFile);
+                long fileLength = 0;
 
-                doc.Root?.Add(XElement.Parse(body));
-                File.WriteAllText(logFile, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" + doc.ToString());
+                if (fileExists)
+                {
+                    FileInfo fileInfo = new FileInfo(logFile);
+                    fileLength = fileInfo.Length;
+                }
+
+                if (fileExists == false || fileLength == 0)
+                {
+                    XElement rootElement = new XElement("Logs");
+                    doc = new XDocument(rootElement);
+                }
+                else
+                {
+                    string fileContent = File.ReadAllText(logFile);
+                    doc = XDocument.Parse(fileContent);
+                }
+
+                XElement newElement = XElement.Parse(body);
+                if (doc.Root != null)
+                {
+                    doc.Root.Add(newElement);
+                }
+
+                string finalXml = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" + doc.ToString();
+                File.WriteAllText(logFile, finalXml);
             }
             catch
             {
@@ -46,12 +87,27 @@ app.MapPost("/api/logs", async (HttpContext context) =>
         }
         else
         {
-            bool addComma = File.Exists(logFile) && new FileInfo(logFile).Length > 0;
-            using var writer = new StreamWriter(logFile, true);
-            if (addComma) writer.WriteLine(",");
-            writer.WriteLine(body);
+            bool addComma = false;
+            if (File.Exists(logFile))
+            {
+                FileInfo fileInfo = new FileInfo(logFile);
+                if (fileInfo.Length > 0)
+                {
+                    addComma = true;
+                }
+            }
+
+            using (StreamWriter writer = new StreamWriter(logFile, true))
+            {
+                if (addComma)
+                {
+                    writer.WriteLine(",");
+                }
+                writer.WriteLine(body);
+            }
         }
     }
+
     return Results.Ok();
 });
 

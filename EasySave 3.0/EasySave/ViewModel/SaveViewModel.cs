@@ -17,38 +17,95 @@ namespace EasySave.ViewModel
             backupService = new BackupService();
         }
 
-        public void SetLogFormat(string format) => backupService.SetLogFormat(format);
+        public void SetLogFormat(string format)
+        {
+            backupService.SetLogFormat(format);
+        }
 
-        public void SetLogDestination(string destination) => backupService.SetLogDestination(destination);
+        public void SetLogDestination(string destination)
+        {
+            backupService.SetLogDestination(destination);
+        }
 
-        public void SetServerUrl(string url) => backupService.SetServerUrl(url);
+        public void SetServerUrl(string url)
+        {
+            backupService.SetServerUrl(url);
+        }
 
-        public void SetLogUserName(string name) => backupService.SetLogUserName(name);
+        public void SetLogUserName(string name)
+        {
+            backupService.SetLogUserName(name);
+        }
 
-        public bool CanCreateNewJob() => backupService.CanCreateJob();
+        public bool CanCreateNewJob()
+        {
+            return backupService.CanCreateJob();
+        }
 
         public void CreateJob(string name, string source, string destination, string type)
         {
-            Backup job = new Backup { Name = name, FileSource = source, FileDestination = destination, Type = type };
+            Backup job = new Backup();
+            job.Name = name;
+            job.FileSource = source;
+            job.FileDestination = destination;
+            job.Type = type;
+
             backupService.CreateJob(job);
         }
 
         public void DeleteJob(string jobName)
         {
-            Backup jobToDelete = backupService.GetAllJobs().Find(j => j.Name == jobName);
-            if (jobToDelete != null) backupService.DeleteJob(jobToDelete);
+            List<Backup> jobs = backupService.GetAllJobs();
+            Backup jobToDelete = null;
+
+            foreach (Backup j in jobs)
+            {
+                if (j.Name == jobName)
+                {
+                    jobToDelete = j;
+                    break;
+                }
+            }
+
+            if (jobToDelete != null)
+            {
+                backupService.DeleteJob(jobToDelete);
+            }
         }
 
-        public List<Backup> GetAllJobs() => backupService.GetAllJobs();
+        public List<Backup> GetAllJobs()
+        {
+            return backupService.GetAllJobs();
+        }
 
-        public void PauseJob(string jobName) => backupService.PauseJob(jobName);
-        public void ResumeJob(string jobName) => backupService.ResumeJob(jobName);
-        public void StopJob(string jobName) => backupService.StopJob(jobName);
+        public void PauseJob(string jobName)
+        {
+            backupService.PauseJob(jobName);
+        }
+
+        public void ResumeJob(string jobName)
+        {
+            backupService.ResumeJob(jobName);
+        }
+
+        public void StopJob(string jobName)
+        {
+            backupService.StopJob(jobName);
+        }
 
         public async Task<string> PerformJobsAsync(string sequence, string businessSoftware, string encryptedExtensions, string priorityExtensions, long maxFileSizeBytes, IProgress<int> progress = null, Action<string> currentFileCallback = null)
         {
             List<Backup> jobs = backupService.GetAllJobs();
-            Backup jobToRun = jobs.Find(j => j.Name == sequence);
+            Backup jobToRun = null;
+
+            foreach (Backup j in jobs)
+            {
+                if (j.Name == sequence)
+                {
+                    jobToRun = j;
+                    break;
+                }
+            }
 
             if (jobToRun != null)
             {
@@ -56,15 +113,20 @@ namespace EasySave.ViewModel
             }
             else if (string.IsNullOrWhiteSpace(sequence))
             {
-                var tasks = jobs.Select(job => backupService.PerformJobsAsync(job, businessSoftware, encryptedExtensions, priorityExtensions, maxFileSizeBytes, progress, currentFileCallback)).ToList();
-                string[] results = await Task.WhenAll(tasks);
+                List<Task<string>> tasks = new List<Task<string>>();
+                foreach (Backup job in jobs)
+                {
+                    tasks.Add(backupService.PerformJobsAsync(job, businessSoftware, encryptedExtensions, priorityExtensions, maxFileSizeBytes, progress, currentFileCallback));
+                }
 
+                string[] results = await Task.WhenAll(tasks);
                 List<string> errors = new List<string>();
+
                 for (int i = 0; i < results.Length; i++)
                 {
-                    if (!string.IsNullOrEmpty(results[i]))
+                    if (string.IsNullOrEmpty(results[i]) == false)
                     {
-                        errors.Add($"[{jobs[i].Name}] {results[i]}");
+                        errors.Add("[" + jobs[i].Name + "] " + results[i]);
                     }
                 }
 

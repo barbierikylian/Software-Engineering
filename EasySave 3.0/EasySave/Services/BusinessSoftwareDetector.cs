@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using System.Linq;
 
 namespace EasySave.Services
 {
@@ -7,20 +6,28 @@ namespace EasySave.Services
     {
         public static bool IsRunning(string businessSoftware)
         {
-            if (string.IsNullOrWhiteSpace(businessSoftware)) return false;
+            if (string.IsNullOrWhiteSpace(businessSoftware))
+            {
+                return false;
+            }
 
             string[] softwareToBlock = businessSoftware.Split(';');
-
             Process[] runningProcesses = Process.GetProcesses();
 
             foreach (string software in softwareToBlock)
             {
                 string cleanName = software.Trim().ToLower();
-                if (string.IsNullOrEmpty(cleanName)) continue;
-
-                if (runningProcesses.Any(p => p.ProcessName.ToLower().Contains(cleanName)))
+                if (string.IsNullOrEmpty(cleanName))
                 {
-                    return true;
+                    continue;
+                }
+
+                foreach (Process p in runningProcesses)
+                {
+                    if (p.ProcessName.ToLower().Contains(cleanName))
+                    {
+                        return true;
+                    }
                 }
             }
 

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 using System.Threading;
-using System.Linq;
 using System.Xml.Linq;
 
 namespace EasyLog
@@ -14,15 +13,17 @@ namespace EasyLog
         private readonly string _filePath;
         private readonly IFormatter _formatter;
 
-        public LogLive(string filePath) : this(filePath, new JsonFormatter()) { }
+        public LogLive(string filePath) : this(filePath, new JsonFormatter())
+        {
+        }
 
         public LogLive(string filePath, IFormatter formatter)
         {
             _formatter = formatter;
             _filePath = Path.ChangeExtension(filePath, formatter.FileExtension);
 
-            string? directory = Path.GetDirectoryName(_filePath);
-            if (!string.IsNullOrEmpty(directory))
+            string directory = Path.GetDirectoryName(_filePath);
+            if (string.IsNullOrEmpty(directory) == false)
             {
                 Directory.CreateDirectory(directory);
             }
@@ -35,10 +36,11 @@ namespace EasyLog
                 if (_formatter.FileExtension == "xml")
                 {
                     WriteXml(logModel);
-                    return;
                 }
-
-                WriteJson(logModel);
+                else
+                {
+                    WriteJson(logModel);
+                }
             }
         }
 
@@ -49,25 +51,52 @@ namespace EasyLog
                 if (_formatter.FileExtension == "xml")
                 {
                     RemoveXml(jobName);
-                    return;
                 }
-
-                RemoveJson(jobName);
+                else
+                {
+                    RemoveJson(jobName);
+                }
             }
         }
 
         private void RemoveXml(string jobName)
         {
-            if (!File.Exists(_filePath)) return;
+            if (File.Exists(_filePath) == false)
+            {
+                return;
+            }
 
             try
             {
                 string fileContent = SafeReadAllText(_filePath);
-                if (string.IsNullOrWhiteSpace(fileContent) || !fileContent.Contains("<Logs>"))
+                if (string.IsNullOrWhiteSpace(fileContent))
+                {
                     return;
+                }
+
+                if (fileContent.Contains("<Logs>") == false)
+                {
+                    return;
+                }
 
                 XDocument doc = XDocument.Parse(fileContent);
-                var existingEntry = doc.Root?.Elements().FirstOrDefault(e => e.Element("name")?.Value == jobName);
+                XElement existingEntry = null;
+
+                if (doc.Root != null)
+                {
+                    foreach (XElement element in doc.Root.Elements())
+                    {
+                        XElement nameElement = element.Element("name");
+                        if (nameElement != null)
+                        {
+                            if (nameElement.Value == jobName)
+                            {
+                                existingEntry = element;
+                                break;
+                            }
+                        }
+                    }
+                }
 
                 if (existingEntry != null)
                 {
@@ -76,21 +105,30 @@ namespace EasyLog
                     SafeWriteAllText(_filePath, finalXml);
                 }
             }
-            catch { }
+            catch
+            {
+            }
         }
 
         private void RemoveJson(string jobName)
         {
-            if (!File.Exists(_filePath)) return;
+            if (File.Exists(_filePath) == false)
+            {
+                return;
+            }
 
             List<LogModel> currentStates = new List<LogModel>();
 
             try
             {
                 string content = SafeReadAllText(_filePath);
-                if (!string.IsNullOrWhiteSpace(content))
+                if (string.IsNullOrWhiteSpace(content) == false)
                 {
-                    currentStates = JsonSerializer.Deserialize<List<LogModel>>(content) ?? new List<LogModel>();
+                    List<LogModel> deserialized = JsonSerializer.Deserialize<List<LogModel>>(content);
+                    if (deserialized != null)
+                    {
+                        currentStates = deserialized;
+                    }
                 }
             }
             catch
@@ -98,30 +136,47 @@ namespace EasyLog
                 return;
             }
 
-            int removedCount = currentStates.RemoveAll(s => s.name == jobName);
+            int removedCount = 0;
+            List<LogModel> elementsToRemove = new List<LogModel>();
+
+            foreach (LogModel state in currentStates)
+            {
+                if (state.name == jobName)
+                {
+                    elementsToRemove.Add(state);
+                }
+            }
+
+            foreach (LogModel stateToRemove in elementsToRemove)
+            {
+                currentStates.Remove(stateToRemove);
+                removedCount++;
+            }
 
             if (removedCount > 0)
             {
-                var listToSerialize = new List<Dictionary<string, object>>();
-                foreach (var state in currentStates)
+                List<Dictionary<string, object>> listToSerialize = new List<Dictionary<string, object>>();
+                foreach (LogModel state in currentStates)
                 {
-                    var dict = new Dictionary<string, object>();
+                    Dictionary<string, object> dict = new Dictionary<string, object>();
 
-                    if (state.name != null) dict["name"] = state.name;
-                    if (state.state != null) dict["state"] = state.state;
-                    if (state.totalFilesToCopy != null) dict["totalFilesToCopy"] = state.totalFilesToCopy;
-                    if (state.totalFilesSize != null) dict["totalFilesSize"] = state.totalFilesSize;
-                    if (state.nbFilesLeftToDo != null) dict["nbFilesLeftToDo"] = state.nbFilesLeftToDo;
-                    if (state.sizeFileRemaining != null) dict["sizeFileRemaining"] = state.sizeFileRemaining;
-                    if (state.progression != null) dict["progression"] = state.progression;
-                    if (state.time != null) dict["time"] = state.time;
-                    if (state.currentSourceFile != null) dict["currentSourceFile"] = state.currentSourceFile;
-                    if (state.currentDestinationFile != null) dict["currentDestinationFile"] = state.currentDestinationFile;
+                    if (state.name != null) dict.Add("name", state.name);
+                    if (state.state != null) dict.Add("state", state.state);
+                    if (state.totalFilesToCopy != null) dict.Add("totalFilesToCopy", state.totalFilesToCopy);
+                    if (state.totalFilesSize != null) dict.Add("totalFilesSize", state.totalFilesSize);
+                    if (state.nbFilesLeftToDo != null) dict.Add("nbFilesLeftToDo", state.nbFilesLeftToDo);
+                    if (state.sizeFileRemaining != null) dict.Add("sizeFileRemaining", state.sizeFileRemaining);
+                    if (state.progression != null) dict.Add("progression", state.progression);
+                    if (state.time != null) dict.Add("time", state.time);
+                    if (state.currentSourceFile != null) dict.Add("currentSourceFile", state.currentSourceFile);
+                    if (state.currentDestinationFile != null) dict.Add("currentDestinationFile", state.currentDestinationFile);
 
                     listToSerialize.Add(dict);
                 }
 
-                string jsonOutput = JsonSerializer.Serialize(listToSerialize, new JsonSerializerOptions { WriteIndented = true });
+                JsonSerializerOptions options = new JsonSerializerOptions();
+                options.WriteIndented = true;
+                string jsonOutput = JsonSerializer.Serialize(listToSerialize, options);
                 SafeWriteAllText(_filePath, jsonOutput);
             }
         }
@@ -134,9 +189,15 @@ namespace EasyLog
             try
             {
                 XDocument doc;
-                if (string.IsNullOrWhiteSpace(fileContent) || !fileContent.Contains("<Logs>"))
+                if (string.IsNullOrWhiteSpace(fileContent))
                 {
-                    doc = new XDocument(new XElement("Logs"));
+                    XElement rootElement = new XElement("Logs");
+                    doc = new XDocument(rootElement);
+                }
+                else if (fileContent.Contains("<Logs>") == false)
+                {
+                    XElement rootElement = new XElement("Logs");
+                    doc = new XDocument(rootElement);
                 }
                 else
                 {
@@ -144,10 +205,38 @@ namespace EasyLog
                 }
 
                 XElement newElement = XElement.Parse(newEntryXml);
+                List<XElement> emptyElements = new List<XElement>();
 
-                newElement.Elements().Where(e => string.IsNullOrWhiteSpace(e.Value)).Remove();
+                foreach (XElement child in newElement.Elements())
+                {
+                    if (string.IsNullOrWhiteSpace(child.Value))
+                    {
+                        emptyElements.Add(child);
+                    }
+                }
 
-                var existingEntry = doc.Root?.Elements().FirstOrDefault(e => e.Element("name")?.Value == logModel.name);
+                foreach (XElement emptyChild in emptyElements)
+                {
+                    emptyChild.Remove();
+                }
+
+                XElement existingEntry = null;
+
+                if (doc.Root != null)
+                {
+                    foreach (XElement element in doc.Root.Elements())
+                    {
+                        XElement nameElement = element.Element("name");
+                        if (nameElement != null)
+                        {
+                            if (nameElement.Value == logModel.name)
+                            {
+                                existingEntry = element;
+                                break;
+                            }
+                        }
+                    }
+                }
 
                 if (existingEntry != null)
                 {
@@ -155,7 +244,10 @@ namespace EasyLog
                 }
                 else
                 {
-                    doc.Root?.Add(newElement);
+                    if (doc.Root != null)
+                    {
+                        doc.Root.Add(newElement);
+                    }
                 }
 
                 string finalXml = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" + doc.ToString();
@@ -177,9 +269,13 @@ namespace EasyLog
                 try
                 {
                     string content = SafeReadAllText(_filePath);
-                    if (!string.IsNullOrWhiteSpace(content))
+                    if (string.IsNullOrWhiteSpace(content) == false)
                     {
-                        currentStates = JsonSerializer.Deserialize<List<LogModel>>(content) ?? new List<LogModel>();
+                        List<LogModel> deserialized = JsonSerializer.Deserialize<List<LogModel>>(content);
+                        if (deserialized != null)
+                        {
+                            currentStates = deserialized;
+                        }
                     }
                 }
                 catch
@@ -188,7 +284,16 @@ namespace EasyLog
                 }
             }
 
-            int index = currentStates.FindIndex(s => s.name == logModel.name);
+            int index = -1;
+            for (int i = 0; i < currentStates.Count; i++)
+            {
+                if (currentStates[i].name == logModel.name)
+                {
+                    index = i;
+                    break;
+                }
+            }
+
             if (index != -1)
             {
                 currentStates[index] = logModel;
@@ -198,26 +303,28 @@ namespace EasyLog
                 currentStates.Add(logModel);
             }
 
-            var listToSerialize = new List<Dictionary<string, object>>();
-            foreach (var state in currentStates)
+            List<Dictionary<string, object>> listToSerialize = new List<Dictionary<string, object>>();
+            foreach (LogModel state in currentStates)
             {
-                var dict = new Dictionary<string, object>();
+                Dictionary<string, object> dict = new Dictionary<string, object>();
 
-                if (state.name != null) dict["name"] = state.name;
-                if (state.state != null) dict["state"] = state.state;
-                if (state.totalFilesToCopy != null) dict["totalFilesToCopy"] = state.totalFilesToCopy;
-                if (state.totalFilesSize != null) dict["totalFilesSize"] = state.totalFilesSize;
-                if (state.nbFilesLeftToDo != null) dict["nbFilesLeftToDo"] = state.nbFilesLeftToDo;
-                if (state.sizeFileRemaining != null) dict["sizeFileRemaining"] = state.sizeFileRemaining;
-                if (state.progression != null) dict["progression"] = state.progression;
-                if (state.time != null) dict["time"] = state.time;
-                if (state.currentSourceFile != null) dict["currentSourceFile"] = state.currentSourceFile;
-                if (state.currentDestinationFile != null) dict["currentDestinationFile"] = state.currentDestinationFile;
+                if (state.name != null) dict.Add("name", state.name);
+                if (state.state != null) dict.Add("state", state.state);
+                if (state.totalFilesToCopy != null) dict.Add("totalFilesToCopy", state.totalFilesToCopy);
+                if (state.totalFilesSize != null) dict.Add("totalFilesSize", state.totalFilesSize);
+                if (state.nbFilesLeftToDo != null) dict.Add("nbFilesLeftToDo", state.nbFilesLeftToDo);
+                if (state.sizeFileRemaining != null) dict.Add("sizeFileRemaining", state.sizeFileRemaining);
+                if (state.progression != null) dict.Add("progression", state.progression);
+                if (state.time != null) dict.Add("time", state.time);
+                if (state.currentSourceFile != null) dict.Add("currentSourceFile", state.currentSourceFile);
+                if (state.currentDestinationFile != null) dict.Add("currentDestinationFile", state.currentDestinationFile);
 
                 listToSerialize.Add(dict);
             }
 
-            string jsonOutput = JsonSerializer.Serialize(listToSerialize, new JsonSerializerOptions { WriteIndented = true });
+            JsonSerializerOptions options = new JsonSerializerOptions();
+            options.WriteIndented = true;
+            string jsonOutput = JsonSerializer.Serialize(listToSerialize, options);
             SafeWriteAllText(_filePath, jsonOutput);
         }
 
@@ -227,10 +334,12 @@ namespace EasyLog
             {
                 try
                 {
-                    using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                    using (var sr = new StreamReader(fs))
+                    using (FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                     {
-                        return sr.ReadToEnd();
+                        using (StreamReader sr = new StreamReader(fs))
+                        {
+                            return sr.ReadToEnd();
+                        }
                     }
                 }
                 catch (IOException)
@@ -247,11 +356,13 @@ namespace EasyLog
             {
                 try
                 {
-                    using (var fs = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.ReadWrite))
-                    using (var sw = new StreamWriter(fs))
+                    using (FileStream fs = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.ReadWrite))
                     {
-                        sw.Write(content);
-                        return;
+                        using (StreamWriter sw = new StreamWriter(fs))
+                        {
+                            sw.Write(content);
+                            return;
+                        }
                     }
                 }
                 catch (IOException)

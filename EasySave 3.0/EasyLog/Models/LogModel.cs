@@ -3,7 +3,6 @@ using System.Text.Json.Serialization;
 
 namespace EasyLog
 {
-    // Data model for a log entry, shared by LogDaily and LogLive.
     public class LogModel
     {
         // For Both
