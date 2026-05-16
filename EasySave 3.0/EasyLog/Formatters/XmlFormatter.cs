@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using System.Reflection;
 using System.Xml.Linq;
 
@@ -15,18 +15,16 @@ namespace EasyLog
             foreach (PropertyInfo property in properties)
             {
                 object? value = property.GetValue(logModel);
-                if (value == null) continue; 
+                if (value == null) continue;
 
                 root.Add(new XElement(property.Name, FormatValue(value)));
             }
 
-            
             return root.ToString();
         }
 
         public string FileExtension => "xml";
 
-        
         private static string FormatValue(object value)
         {
             return value switch

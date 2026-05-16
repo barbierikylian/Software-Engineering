@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-namespace EasySave.Services
+namespace EasySave.Service
 {
     public static class BusinessSoftwareDetector
     {

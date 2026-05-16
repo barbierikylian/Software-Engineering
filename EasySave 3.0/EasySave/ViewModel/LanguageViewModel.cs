@@ -1,37 +1,50 @@
-﻿using EasySave.Model;
+using System.ComponentModel;
+using EasySave.Model;
 
 namespace EasySave.ViewModel
 {
-    public class LanguageViewModel
+    public class LanguageViewModel : INotifyPropertyChanged
     {
-        private LanguageManager languageManager;
+        private LanguageManager _languageManager;
+
+        public string this[string key]
+        {
+            get
+            {
+                return _languageManager.GetString(key);
+            }
+        }
+
+        public string CurrentLanguage
+        {
+            get
+            {
+                return _languageManager.GetCurrentLanguage();
+            }
+            set
+            {
+                if (!string.IsNullOrEmpty(value) && _languageManager.GetCurrentLanguage() != value)
+                {
+                    _languageManager.LoadLanguage(value);
+                    OnPropertyChanged("CurrentLanguage");
+                    OnPropertyChanged("Item[]");
+                }
+            }
+        }
 
         public LanguageViewModel()
         {
-            languageManager = new LanguageManager();
-            languageManager.LoadLanguage("en");
+            _languageManager = new LanguageManager();
+            _languageManager.LoadLanguage("en");
         }
 
-        public void UpdateLanguage(string language)
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected void OnPropertyChanged(string propertyName)
         {
-            languageManager.LoadLanguage(language);
-        }
-
-        public void SwitchLanguage()
-        {
-            if (languageManager.GetCurrentLanguage() == "fr")
+            if (PropertyChanged != null)
             {
-                languageManager.LoadLanguage("en");
+                PropertyChanged.Invoke(this, new PropertyChangedEventArgs(propertyName));
             }
-            else
-            {
-                languageManager.LoadLanguage("fr");
-            }
-        }
-
-        public string GetString(string key)
-        {
-            return languageManager.GetString(key);
         }
     }
 }

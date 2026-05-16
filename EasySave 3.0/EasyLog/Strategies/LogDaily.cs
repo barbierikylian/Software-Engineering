@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Net.Http;
 using System.Text;
@@ -60,12 +60,7 @@ namespace EasyLog
 
         private void WriteLocal(string serializedLog)
         {
-            string ext = "json";
-            string formatterName = _formatter.GetType().Name.ToLower();
-            if (formatterName.Contains("xml"))
-            {
-                ext = "xml";
-            }
+            string ext = _formatter.FileExtension;
 
             string dateString = DateTime.Now.ToString("yyyy-MM-dd");
             string fileName = dateString + "." + ext;
@@ -73,33 +68,77 @@ namespace EasyLog
 
             lock (_fileLock)
             {
-                try
+                if (Directory.Exists(_logDirectory) == false)
                 {
-                    bool addComma = false;
-                    if (ext == "json")
-                    {
-                        if (File.Exists(filePath))
-                        {
-                            FileInfo fileInfo = new FileInfo(filePath);
-                            if (fileInfo.Length > 0)
-                            {
-                                addComma = true;
-                            }
-                        }
-                    }
-
-                    using (StreamWriter writer = new StreamWriter(filePath, true))
-                    {
-                        if (addComma)
-                        {
-                            writer.WriteLine(",");
-                        }
-                        writer.WriteLine(serializedLog);
-                    }
+                    Directory.CreateDirectory(_logDirectory);
                 }
-                catch (Exception ex)
+
+                if (ext == "xml")
                 {
-                    Debug.WriteLine("Error writing local log: " + ex.Message);
+                    WriteXmlEntry(filePath, serializedLog);
+                }
+                else
+                {
+                    WriteJsonEntry(filePath, serializedLog);
+                }
+            }
+        }
+
+        private void WriteJsonEntry(string filePath, string jsonEntry)
+        {
+            const string closingBracket = "]";
+
+            if (File.Exists(filePath) == false)
+            {
+                string initial = "[\n" + jsonEntry + "\n]";
+                File.WriteAllText(filePath, initial, Encoding.UTF8);
+            }
+            else
+            {
+                string existing = File.ReadAllText(filePath, Encoding.UTF8).TrimEnd();
+                int closeIndex = existing.LastIndexOf(closingBracket);
+
+                if (closeIndex >= 0)
+                {
+                    string newContent = existing.Substring(0, closeIndex).TrimEnd()
+                        + ",\n" + jsonEntry + "\n]";
+                    File.WriteAllText(filePath, newContent, Encoding.UTF8);
+                }
+                else
+                {
+                    string newContent = "[\n" + jsonEntry + "\n]";
+                    File.WriteAllText(filePath, newContent, Encoding.UTF8);
+                }
+            }
+        }
+
+        private void WriteXmlEntry(string filePath, string xmlEntry)
+        {
+            const string xmlHeader = "<?xml version=\"1.0\" encoding=\"utf-8\"?>";
+            const string rootOpen = "<Logs>";
+            const string rootClose = "</Logs>";
+
+            if (File.Exists(filePath) == false)
+            {
+                string content = xmlHeader + "\n" + rootOpen + "\n" + xmlEntry + "\n" + rootClose;
+                File.WriteAllText(filePath, content, Encoding.UTF8);
+            }
+            else
+            {
+                string existing = File.ReadAllText(filePath, Encoding.UTF8);
+                int closeIndex = existing.LastIndexOf(rootClose);
+
+                if (closeIndex >= 0)
+                {
+                    string newContent = existing.Substring(0, closeIndex)
+                        + xmlEntry + "\n"
+                        + rootClose;
+                    File.WriteAllText(filePath, newContent, Encoding.UTF8);
+                }
+                else
+                {
+                    string newContent = xmlHeader + "\n" + rootOpen + "\n" + xmlEntry + "\n" + rootClose;
+                    File.WriteAllText(filePath, newContent, Encoding.UTF8);
                 }
             }
         }

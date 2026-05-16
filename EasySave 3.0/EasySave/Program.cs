@@ -1,20 +1,21 @@
-﻿using System;
+﻿using EasySave.Model;
+using EasySave.Service;
+using EasySave.View;
+using EasySave;
+using System;
 using System.Collections.Generic;
 using System.Windows;
-using EasySave.Model;
-using EasySave.ViewModel;
 
-namespace EasySaveGUI
+namespace EasySave
 {
     public class Program
     {
         [STAThread]
         public static void Main(string[] args)
         {
-            SaveViewModel saveViewModel = new SaveViewModel();
-
             if (args.Length > 0)
             {
+                BackupService backupService = new BackupService();
                 string inputUser = string.Join("", args).Trim();
                 List<int> jobsToExecute = new List<int>();
 
@@ -41,16 +42,16 @@ namespace EasySaveGUI
                     }
 
                     long maxFileSizeBytes = 50 * 1024 * 1024;
+                    List<Backup> allJobsList = backupService.GetAllJobs();
 
                     foreach (int jobNum in jobsToExecute)
                     {
-                        List<Backup> allJobsList = saveViewModel.GetAllJobs();
                         int index = jobNum - 1;
 
                         if (index >= 0 && index < allJobsList.Count)
                         {
-                            string targetName = allJobsList[index].Name;
-                            saveViewModel.PerformJobsAsync(targetName, "", "", "", maxFileSizeBytes).Wait();
+                            Backup targetJob = allJobsList[index];
+                            backupService.PerformJobsAsync(targetJob, "", "", "", maxFileSizeBytes).Wait();
                         }
                     }
                 }
@@ -61,7 +62,6 @@ namespace EasySaveGUI
             else
             {
                 App app = new App();
-
                 MainWindow window = new MainWindow();
                 app.Run(window);
             }

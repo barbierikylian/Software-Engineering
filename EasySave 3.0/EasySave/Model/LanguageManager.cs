@@ -20,7 +20,7 @@ namespace EasySave.Model
 
             currentLanguage = language;
             string jsonContent = File.ReadAllText(filePath);
-            translations = JsonSerializer.Deserialize<Dictionary<string, string>>(jsonContent) ?? new();
+            translations = JsonSerializer.Deserialize<Dictionary<string, string>>(jsonContent) ?? new Dictionary<string, string>();
         }
 
         public string GetString(string key)

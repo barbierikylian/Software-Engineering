@@ -1,6 +1,5 @@
-﻿using EasyLog;
+using EasyLog;
 using EasySave.Model;
-using EasySave.Service;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -8,7 +7,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace EasySave.Services
+namespace EasySave.Service
 {
     public abstract class SaveStrategyBase : ISaveStrategy
     {
@@ -26,10 +25,15 @@ namespace EasySave.Services
             state.progression = 0;
             state.time = DateTime.Now;
 
+            string appDataInit = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            string logDirInit = Path.Combine(appDataInit, "EasySave", "logs");
+            LogDaily dailyLogger = new LogDaily(logDirInit, formatter, serverUrl, userName);
+            dailyLogger.Destination = logDestination;
+
             try
             {
-                string source = SaveServices.ConvertToUNC(job.FileSource);
-                string target = SaveServices.ConvertToUNC(job.FileDestination);
+                string source = SaveService.ConvertToUNC(job.FileSource);
+                string target = SaveService.ConvertToUNC(job.FileDestination);
 
                 if (Directory.Exists(source) == false)
                 {
@@ -39,17 +43,11 @@ namespace EasySave.Services
                         state.time = DateTime.Now;
                         logger.WriteLog(state);
                     }
-                    return "Error: Source directory does not exist.";
+                    return "error_source_missing";
                 }
 
                 _filesCopied = 0;
                 _bytesCopied = 0;
-
-                string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-                string logDir = Path.Combine(appData, "EasySave", "logs");
-
-                LogDaily dailyLogger = new LogDaily(logDir, formatter, serverUrl, userName);
-                dailyLogger.Destination = logDestination;
 
                 string[] allFiles = Directory.GetFiles(source, "*", SearchOption.AllDirectories);
                 long totalSize = 0;
@@ -70,7 +68,9 @@ namespace EasySave.Services
                 {
                     lock (_logLock)
                     {
-                        logger.RemoveLog(state.name);
+                        state.state = "Stopped";
+                        state.time = DateTime.Now;
+                        logger.WriteLog(state);
                     }
                     return "Job stopped.";
                 }
@@ -104,7 +104,7 @@ namespace EasySave.Services
             string[] sortedFiles = SortFiles(allFiles, prioExts);
 
             int myRemainingPriorityFiles = CountPriorityFiles(sortedFiles, prioExts);
-            Interlocked.Add(ref SaveServices.PendingPriorityFiles, myRemainingPriorityFiles);
+            Interlocked.Add(ref SaveService.PendingPriorityFiles, myRemainingPriorityFiles);
 
             Stopwatch updateTimer = Stopwatch.StartNew();
 
@@ -167,7 +167,7 @@ namespace EasySave.Services
                     {
                         if (isPriority)
                         {
-                            Interlocked.Decrement(ref SaveServices.PendingPriorityFiles);
+                            Interlocked.Decrement(ref SaveService.PendingPriorityFiles);
                             myRemainingPriorityFiles--;
                         }
                     }
@@ -177,7 +177,7 @@ namespace EasySave.Services
             {
                 if (myRemainingPriorityFiles > 0)
                 {
-                    Interlocked.Add(ref SaveServices.PendingPriorityFiles, -myRemainingPriorityFiles);
+                    Interlocked.Add(ref SaveService.PendingPriorityFiles, -myRemainingPriorityFiles);
                 }
             }
         }
@@ -270,7 +270,7 @@ namespace EasySave.Services
         private bool HandlePriorityWait(CancellationToken cancelToken, LogModel state, ILogStrategy logger, Action<string> currentFileCallback)
         {
             bool wasPaused = false;
-            while (Interlocked.Read(ref SaveServices.PendingPriorityFiles) > 0)
+            while (Interlocked.Read(ref SaveService.PendingPriorityFiles) > 0)
             {
                 if (cancelToken.IsCancellationRequested)
                 {
@@ -320,11 +320,15 @@ namespace EasySave.Services
 
             bool semaphoreAcquired = false;
 
+            Stopwatch fileTimer = Stopwatch.StartNew();
+            long encTime = 0;
+            bool fileCopiedSuccessfully = false;
+
             try
             {
                 if (isBigFile)
                 {
-                    if (SaveServices.BigFileSemaphore.Wait(0) == false)
+                    if (SaveService.BigFileSemaphore.Wait(0) == false)
                     {
                         lock (_logLock)
                         {
@@ -336,7 +340,7 @@ namespace EasySave.Services
                             currentFileCallback.Invoke("⏸ Auto Pause: " + Path.GetFileName(filePath));
                         }
 
-                        SaveServices.BigFileSemaphore.Wait(cancelToken);
+                        SaveService.BigFileSemaphore.Wait(cancelToken);
 
                         lock (_logLock)
                         {
@@ -346,9 +350,7 @@ namespace EasySave.Services
                     semaphoreAcquired = true;
                 }
 
-                Stopwatch fileTimer = Stopwatch.StartNew();
-
-                long encTime = SaveServices.CopyOrEncrypt(filePath, destPath, encryptedExtensions, (chunkSize) =>
+                encTime = SaveService.CopyOrEncrypt(filePath, destPath, encryptedExtensions, (chunkSize) =>
                 {
                     bool wasPausedBySoftware = false;
                     while (BusinessSoftwareDetector.IsRunning(businessSoftware))
@@ -372,7 +374,7 @@ namespace EasySave.Services
 
                             if (isBigFile && semaphoreAcquired)
                             {
-                                SaveServices.BigFileSemaphore.Release();
+                                SaveService.BigFileSemaphore.Release();
                                 semaphoreAcquired = false;
                             }
                         }
@@ -386,7 +388,7 @@ namespace EasySave.Services
                             {
                                 currentFileCallback.Invoke("⏸ Auto Pause: " + Path.GetFileName(filePath));
                             }
-                            SaveServices.BigFileSemaphore.Wait(cancelToken);
+                            SaveService.BigFileSemaphore.Wait(cancelToken);
                             semaphoreAcquired = true;
                         }
                         lock (_logLock)
@@ -408,7 +410,7 @@ namespace EasySave.Services
                     }
                     if (isBigFile && semaphoreAcquired)
                     {
-                        SaveServices.BigFileSemaphore.Release();
+                        SaveService.BigFileSemaphore.Release();
                         semaphoreAcquired = false;
                     }
                 },
@@ -420,7 +422,7 @@ namespace EasySave.Services
                         {
                             currentFileCallback.Invoke("⏸ Auto Pause: " + Path.GetFileName(filePath));
                         }
-                        SaveServices.BigFileSemaphore.Wait(cancelToken);
+                        SaveService.BigFileSemaphore.Wait(cancelToken);
                         semaphoreAcquired = true;
                     }
                     lock (_logLock)
@@ -432,6 +434,7 @@ namespace EasySave.Services
                 }, pauseEvent, cancelToken);
 
                 fileTimer.Stop();
+                fileCopiedSuccessfully = true;
                 _filesCopied++;
 
                 lock (_logLock)
@@ -443,17 +446,6 @@ namespace EasySave.Services
                         logger.WriteLog(state);
                         updateTimer.Restart();
                     }
-
-                    LogModel dailyLog = new LogModel();
-                    dailyLog.name = state.name;
-                    dailyLog.fileSource = filePath;
-                    dailyLog.fileDestination = destPath;
-                    dailyLog.fileSize = fileSize;
-                    dailyLog.fileTransferTime = fileTimer.Elapsed.TotalMilliseconds;
-                    dailyLog.encryptionTime = encTime;
-                    dailyLog.time = DateTime.Now;
-
-                    dailyLogger.WriteLog(dailyLog);
                 }
             }
             catch (OperationCanceledException)
@@ -464,7 +456,32 @@ namespace EasySave.Services
             {
                 if (semaphoreAcquired)
                 {
-                    SaveServices.BigFileSemaphore.Release();
+                    SaveService.BigFileSemaphore.Release();
+                }
+
+                if (fileCopiedSuccessfully)
+                {
+                    fileTimer.Stop();
+                    try
+                    {
+                        LogModel dailyLog = new LogModel();
+                        dailyLog.name = state.name;
+                        dailyLog.fileSource = filePath;
+                        dailyLog.fileDestination = destPath;
+                        dailyLog.fileSize = fileSize;
+                        dailyLog.fileTransferTime = fileTimer.Elapsed.TotalMilliseconds;
+                        dailyLog.encryptionTime = encTime;
+                        dailyLog.time = DateTime.Now;
+                        dailyLogger.WriteLog(dailyLog);
+                    }
+                    catch (Exception logEx)
+                    {
+                        System.Diagnostics.Debug.WriteLine("[DailyLog] Write failed: " + logEx.Message);
+                        if (currentFileCallback != null)
+                        {
+                            currentFileCallback.Invoke("[DailyLog ERR] " + logEx.Message);
+                        }
+                    }
                 }
             }
         }
