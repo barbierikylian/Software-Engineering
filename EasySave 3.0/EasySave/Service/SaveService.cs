@@ -4,9 +4,9 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 
-namespace EasySave.Services
+namespace EasySave.Service
 {
-    public static class SaveServices
+    public static class SaveService
     {
         public static SemaphoreSlim BigFileSemaphore = new SemaphoreSlim(1, 1);
         public const long BIG_FILE_THRESHOLD = 50 * 1024 * 1024;

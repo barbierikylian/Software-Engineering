@@ -1,6 +1,5 @@
 ﻿using EasyLog;
 using EasySave.Model;
-using EasySave.Service;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -8,7 +7,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace EasySave.Services
+namespace EasySave.Service
 {
     public abstract class SaveStrategyBase : ISaveStrategy
     {
@@ -28,8 +27,8 @@ namespace EasySave.Services
 
             try
             {
-                string source = SaveServices.ConvertToUNC(job.FileSource);
-                string target = SaveServices.ConvertToUNC(job.FileDestination);
+                string source = SaveService.ConvertToUNC(job.FileSource);
+                string target = SaveService.ConvertToUNC(job.FileDestination);
 
                 if (Directory.Exists(source) == false)
                 {
@@ -104,7 +103,7 @@ namespace EasySave.Services
             string[] sortedFiles = SortFiles(allFiles, prioExts);
 
             int myRemainingPriorityFiles = CountPriorityFiles(sortedFiles, prioExts);
-            Interlocked.Add(ref SaveServices.PendingPriorityFiles, myRemainingPriorityFiles);
+            Interlocked.Add(ref SaveService.PendingPriorityFiles, myRemainingPriorityFiles);
 
             Stopwatch updateTimer = Stopwatch.StartNew();
 
@@ -167,7 +166,7 @@ namespace EasySave.Services
                     {
                         if (isPriority)
                         {
-                            Interlocked.Decrement(ref SaveServices.PendingPriorityFiles);
+                            Interlocked.Decrement(ref SaveService.PendingPriorityFiles);
                             myRemainingPriorityFiles--;
                         }
                     }
@@ -177,7 +176,7 @@ namespace EasySave.Services
             {
                 if (myRemainingPriorityFiles > 0)
                 {
-                    Interlocked.Add(ref SaveServices.PendingPriorityFiles, -myRemainingPriorityFiles);
+                    Interlocked.Add(ref SaveService.PendingPriorityFiles, -myRemainingPriorityFiles);
                 }
             }
         }
@@ -270,7 +269,7 @@ namespace EasySave.Services
         private bool HandlePriorityWait(CancellationToken cancelToken, LogModel state, ILogStrategy logger, Action<string> currentFileCallback)
         {
             bool wasPaused = false;
-            while (Interlocked.Read(ref SaveServices.PendingPriorityFiles) > 0)
+            while (Interlocked.Read(ref SaveService.PendingPriorityFiles) > 0)
             {
                 if (cancelToken.IsCancellationRequested)
                 {
@@ -324,7 +323,7 @@ namespace EasySave.Services
             {
                 if (isBigFile)
                 {
-                    if (SaveServices.BigFileSemaphore.Wait(0) == false)
+                    if (SaveService.BigFileSemaphore.Wait(0) == false)
                     {
                         lock (_logLock)
                         {
@@ -336,7 +335,7 @@ namespace EasySave.Services
                             currentFileCallback.Invoke("⏸ Auto Pause: " + Path.GetFileName(filePath));
                         }
 
-                        SaveServices.BigFileSemaphore.Wait(cancelToken);
+                        SaveService.BigFileSemaphore.Wait(cancelToken);
 
                         lock (_logLock)
                         {
@@ -348,7 +347,7 @@ namespace EasySave.Services
 
                 Stopwatch fileTimer = Stopwatch.StartNew();
 
-                long encTime = SaveServices.CopyOrEncrypt(filePath, destPath, encryptedExtensions, (chunkSize) =>
+                long encTime = SaveService.CopyOrEncrypt(filePath, destPath, encryptedExtensions, (chunkSize) =>
                 {
                     bool wasPausedBySoftware = false;
                     while (BusinessSoftwareDetector.IsRunning(businessSoftware))
@@ -372,7 +371,7 @@ namespace EasySave.Services
 
                             if (isBigFile && semaphoreAcquired)
                             {
-                                SaveServices.BigFileSemaphore.Release();
+                                SaveService.BigFileSemaphore.Release();
                                 semaphoreAcquired = false;
                             }
                         }
@@ -386,7 +385,7 @@ namespace EasySave.Services
                             {
                                 currentFileCallback.Invoke("⏸ Auto Pause: " + Path.GetFileName(filePath));
                             }
-                            SaveServices.BigFileSemaphore.Wait(cancelToken);
+                            SaveService.BigFileSemaphore.Wait(cancelToken);
                             semaphoreAcquired = true;
                         }
                         lock (_logLock)
@@ -408,7 +407,7 @@ namespace EasySave.Services
                     }
                     if (isBigFile && semaphoreAcquired)
                     {
-                        SaveServices.BigFileSemaphore.Release();
+                        SaveService.BigFileSemaphore.Release();
                         semaphoreAcquired = false;
                     }
                 },
@@ -420,7 +419,7 @@ namespace EasySave.Services
                         {
                             currentFileCallback.Invoke("⏸ Auto Pause: " + Path.GetFileName(filePath));
                         }
-                        SaveServices.BigFileSemaphore.Wait(cancelToken);
+                        SaveService.BigFileSemaphore.Wait(cancelToken);
                         semaphoreAcquired = true;
                     }
                     lock (_logLock)
@@ -464,7 +463,7 @@ namespace EasySave.Services
             {
                 if (semaphoreAcquired)
                 {
-                    SaveServices.BigFileSemaphore.Release();
+                    SaveService.BigFileSemaphore.Release();
                 }
             }
         }

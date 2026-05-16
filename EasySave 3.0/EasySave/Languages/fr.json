@@ -48,7 +48,7 @@
   "error_dest_required": "Le chemin de destination est requis.",
   "error_select_job": "Veuillez sélectionner un travail d'abord.",
   "error_no_jobs_exec": "Aucun travail configuré. Créez-en un d'abord.",
-  "hint_ctrl_click": "Utilisez Ctrl+Clic ou Maj+Clic pour sélectionner plusieurs travaux.",
+  "hint_select_multiple": "Cliquez sur les checkboxs pour séléctionner des travaux.",
   "label_logs_title": "Fichiers de logs",
   "label_log_format": "Format des logs",
   "label_log_location": "Emplacement des logs",

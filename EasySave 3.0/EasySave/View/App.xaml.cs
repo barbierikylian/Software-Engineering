@@ -2,7 +2,7 @@
 using System.Data;
 using System.Windows;
 
-namespace EasySaveGUI
+namespace EasySave.View
 {
     /// <summary>
     /// Interaction logic for App.xaml

@@ -1,142 +1,303 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using EasySave.Model;
+﻿using EasySave.Model;
 using EasySave.Service;
-using EasySave.Services;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Threading.Tasks;
 
 namespace EasySave.ViewModel
 {
-    public class SaveViewModel
+    public class SaveViewModel : INotifyPropertyChanged
     {
-        private BackupService backupService;
+        private BackupService _backupService;
+
+        public ObservableCollection<SelectableBackup> Jobs { get; set; }
+        public ObservableCollection<JobProgressInfo> ActiveJobs { get; set; }
+
+        private string _inputName;
+        public string InputName { get { return _inputName; } set { _inputName = value; OnPropertyChanged("InputName"); } }
+
+        private string _inputSource;
+        public string InputSource { get { return _inputSource; } set { _inputSource = value; OnPropertyChanged("InputSource"); } }
+
+        private string _inputTarget;
+        public string InputTarget { get { return _inputTarget; } set { _inputTarget = value; OnPropertyChanged("InputTarget"); } }
+
+        private string _inputType = "Full";
+        public string InputType { get { return _inputType; } set { _inputType = value; OnPropertyChanged("InputType"); } }
+
+        private string _businessSoft = "CalculatorApp";
+        public string BusinessSoft { get { return _businessSoft; } set { _businessSoft = value; OnPropertyChanged("BusinessSoft"); } }
+
+        private string _encryptedExt = ".txt;.pdf";
+        public string EncryptedExt { get { return _encryptedExt; } set { _encryptedExt = value; OnPropertyChanged("EncryptedExt"); } }
+
+        private string _priorityExt = ".iso;.png";
+        public string PriorityExt { get { return _priorityExt; } set { _priorityExt = value; OnPropertyChanged("PriorityExt"); } }
+
+        private string _maxFileSize = "50000";
+        public string MaxFileSize { get { return _maxFileSize; } set { _maxFileSize = value; OnPropertyChanged("MaxFileSize"); } }
+
+        private string _serverUrl = "http://localhost:8080/api/logs";
+        public string ServerUrl
+        {
+            get { return _serverUrl; }
+            set { _serverUrl = value; _backupService.SetServerUrl(value); OnPropertyChanged("ServerUrl"); }
+        }
+
+        private string _userName = Environment.UserName;
+        public string UserName
+        {
+            get { return _userName; }
+            set { _userName = value; _backupService.SetLogUserName(string.IsNullOrWhiteSpace(value) ? Environment.UserName : value); OnPropertyChanged("UserName"); }
+        }
+
+        private bool _isJson = true;
+        public bool IsJson { get { return _isJson; } set { _isJson = value; if (value) _backupService.SetLogFormat("json"); OnPropertyChanged("IsJson"); } }
+
+        private bool _isXml;
+        public bool IsXml { get { return _isXml; } set { _isXml = value; if (value) _backupService.SetLogFormat("xml"); OnPropertyChanged("IsXml"); } }
+
+        private bool _isLogLocal;
+        public bool IsLogLocal { get { return _isLogLocal; } set { _isLogLocal = value; if (value) _backupService.SetLogDestination("Local"); OnPropertyChanged("IsLogLocal"); } }
+
+        private bool _isLogServer;
+        public bool IsLogServer { get { return _isLogServer; } set { _isLogServer = value; if (value) _backupService.SetLogDestination("Centralized"); OnPropertyChanged("IsLogServer"); } }
+
+        private bool _isLogBoth = true;
+        public bool IsLogBoth { get { return _isLogBoth; } set { _isLogBoth = value; if (value) _backupService.SetLogDestination("Both"); OnPropertyChanged("IsLogBoth"); } }
+
+        private bool _isButtonsEnabled = true;
+        public bool IsButtonsEnabled { get { return _isButtonsEnabled; } set { _isButtonsEnabled = value; OnPropertyChanged("IsButtonsEnabled"); } }
+
+        private string _bannerErrorText;
+        public string BannerErrorText { get { return _bannerErrorText; } set { _bannerErrorText = value; OnPropertyChanged("BannerErrorText"); } }
+
+        private bool _isBannerErrorVisible;
+        public bool IsBannerErrorVisible { get { return _isBannerErrorVisible; } set { _isBannerErrorVisible = value; OnPropertyChanged("IsBannerErrorVisible"); } }
+
+        private string _bannerSuccessText;
+        public string BannerSuccessText { get { return _bannerSuccessText; } set { _bannerSuccessText = value; OnPropertyChanged("BannerSuccessText"); } }
+
+        private bool _isBannerSuccessVisible;
+        public bool IsBannerSuccessVisible { get { return _isBannerSuccessVisible; } set { _isBannerSuccessVisible = value; OnPropertyChanged("IsBannerSuccessVisible"); } }
+
+        public RelayCommand AddJobCommand { get; set; }
+        public RelayCommand DeleteJobCommand { get; set; }
+        public RelayCommand ExecuteCommand { get; set; }
+        public RelayCommand ExecuteAllCommand { get; set; }
+        public RelayCommand PlayPauseCommand { get; set; }
+        public RelayCommand StopCommand { get; set; }
+        public RelayCommand CloseBannersCommand { get; set; }
 
         public SaveViewModel()
         {
-            backupService = new BackupService();
+            _backupService = new BackupService();
+            Jobs = new ObservableCollection<SelectableBackup>();
+            ActiveJobs = new ObservableCollection<JobProgressInfo>();
+
+            AddJobCommand = new RelayCommand(AddJob);
+            DeleteJobCommand = new RelayCommand(DeleteJob);
+            ExecuteCommand = new RelayCommand(ExecuteSelected);
+            ExecuteAllCommand = new RelayCommand(ExecuteAll);
+            PlayPauseCommand = new RelayCommand(PlayPauseJob);
+            StopCommand = new RelayCommand(StopJob);
+            CloseBannersCommand = new RelayCommand(CloseBanners);
+
+            RefreshGrid();
+            _backupService.SetLogUserName(Environment.UserName);
+            _backupService.SetServerUrl(ServerUrl);
         }
 
-        public void SetLogFormat(string format)
+        private void RefreshGrid()
         {
-            backupService.SetLogFormat(format);
-        }
-
-        public void SetLogDestination(string destination)
-        {
-            backupService.SetLogDestination(destination);
-        }
-
-        public void SetServerUrl(string url)
-        {
-            backupService.SetServerUrl(url);
-        }
-
-        public void SetLogUserName(string name)
-        {
-            backupService.SetLogUserName(name);
-        }
-
-        public bool CanCreateNewJob()
-        {
-            return backupService.CanCreateJob();
-        }
-
-        public void CreateJob(string name, string source, string destination, string type)
-        {
-            Backup job = new Backup();
-            job.Name = name;
-            job.FileSource = source;
-            job.FileDestination = destination;
-            job.Type = type;
-
-            backupService.CreateJob(job);
-        }
-
-        public void DeleteJob(string jobName)
-        {
-            List<Backup> jobs = backupService.GetAllJobs();
-            Backup jobToDelete = null;
-
-            foreach (Backup j in jobs)
+            Jobs.Clear();
+            foreach (Backup job in _backupService.GetAllJobs())
             {
-                if (j.Name == jobName)
-                {
-                    jobToDelete = j;
-                    break;
-                }
-            }
-
-            if (jobToDelete != null)
-            {
-                backupService.DeleteJob(jobToDelete);
+                Jobs.Add(new SelectableBackup(job));
             }
         }
 
-        public List<Backup> GetAllJobs()
+        private void AddJob(object parameter)
         {
-            return backupService.GetAllJobs();
-        }
+            IsBannerErrorVisible = false;
+            IsBannerSuccessVisible = false;
 
-        public void PauseJob(string jobName)
-        {
-            backupService.PauseJob(jobName);
-        }
-
-        public void ResumeJob(string jobName)
-        {
-            backupService.ResumeJob(jobName);
-        }
-
-        public void StopJob(string jobName)
-        {
-            backupService.StopJob(jobName);
-        }
-
-        public async Task<string> PerformJobsAsync(string sequence, string businessSoftware, string encryptedExtensions, string priorityExtensions, long maxFileSizeBytes, IProgress<int> progress = null, Action<string> currentFileCallback = null)
-        {
-            List<Backup> jobs = backupService.GetAllJobs();
-            Backup jobToRun = null;
-
-            foreach (Backup j in jobs)
+            if (string.IsNullOrWhiteSpace(InputName) || string.IsNullOrWhiteSpace(InputSource) || string.IsNullOrWhiteSpace(InputTarget))
             {
-                if (j.Name == sequence)
-                {
-                    jobToRun = j;
-                    break;
-                }
+                BannerErrorText = "Required fields are missing.";
+                IsBannerErrorVisible = true;
+                return;
             }
 
-            if (jobToRun != null)
+            if (_backupService.CanCreateJob() == false)
             {
-                return await backupService.PerformJobsAsync(jobToRun, businessSoftware, encryptedExtensions, priorityExtensions, maxFileSizeBytes, progress, currentFileCallback);
+                BannerErrorText = "Maximum number of jobs reached.";
+                IsBannerErrorVisible = true;
+                return;
             }
-            else if (string.IsNullOrWhiteSpace(sequence))
+
+            Backup newJob = new Backup { Name = InputName.Trim(), FileSource = InputSource.Trim(), FileDestination = InputTarget.Trim(), Type = InputType };
+            _backupService.CreateJob(newJob);
+
+            RefreshGrid();
+            BannerSuccessText = "Job created successfully.";
+            IsBannerSuccessVisible = true;
+
+            InputName = string.Empty;
+            InputSource = string.Empty;
+            InputTarget = string.Empty;
+        }
+
+        private void DeleteJob(object parameter)
+        {
+            List<SelectableBackup> toDelete = new List<SelectableBackup>();
+            foreach (SelectableBackup item in Jobs)
             {
-                List<Task<string>> tasks = new List<Task<string>>();
-                foreach (Backup job in jobs)
-                {
-                    tasks.Add(backupService.PerformJobsAsync(job, businessSoftware, encryptedExtensions, priorityExtensions, maxFileSizeBytes, progress, currentFileCallback));
-                }
+                if (item.IsSelected) toDelete.Add(item);
+            }
 
-                string[] results = await Task.WhenAll(tasks);
-                List<string> errors = new List<string>();
+            foreach (SelectableBackup item in toDelete)
+            {
+                _backupService.DeleteJob(item.Job);
+            }
 
-                for (int i = 0; i < results.Length; i++)
+            RefreshGrid();
+            BannerSuccessText = "Job(s) deleted successfully.";
+            IsBannerSuccessVisible = true;
+        }
+
+        private void ExecuteSelected(object parameter)
+        {
+            List<Backup> selectedJobs = new List<Backup>();
+            foreach (SelectableBackup item in Jobs)
+            {
+                if (item.IsSelected) selectedJobs.Add(item.Job);
+            }
+
+            if (selectedJobs.Count > 0) RunJobsInParallel(selectedJobs);
+        }
+
+        private void ExecuteAll(object parameter)
+        {
+            List<Backup> allJobs = _backupService.GetAllJobs();
+            if (allJobs.Count > 0) RunJobsInParallel(allJobs);
+        }
+
+        private async void RunJobsInParallel(List<Backup> jobsToRun)
+        {
+            ActiveJobs.Clear();
+            IsButtonsEnabled = false;
+
+            long maxFileSizeBytes = 52428800;
+            long parsedKb;
+            if (long.TryParse(MaxFileSize, out parsedKb)) maxFileSizeBytes = parsedKb * 1024;
+
+            List<Task> tasks = new List<Task>();
+
+            foreach (Backup job in jobsToRun)
+            {
+                JobProgressInfo jobUI = new JobProgressInfo();
+                jobUI.Name = job.Name;
+                jobUI.Status = "Running";
+                jobUI.Progress = 0;
+                jobUI.CurrentFile = "Starting...";
+                jobUI.PlayPauseIcon = "⏸";
+                jobUI.IsPlayPauseEnabled = true;
+
+                ActiveJobs.Add(jobUI);
+
+                Progress<int> progressObj = new Progress<int>(p => jobUI.Progress = p);
+                Progress<string> textProgress = new Progress<string>(text =>
                 {
-                    if (string.IsNullOrEmpty(results[i]) == false)
+                    if (ActiveJobs.Contains(jobUI) == false) return;
+                    jobUI.CurrentFile = text;
+
+                    if (text.StartsWith("⏸"))
                     {
-                        errors.Add("[" + jobs[i].Name + "] " + results[i]);
+                        jobUI.Status = "Blocked";
+                        jobUI.IsPlayPauseEnabled = false;
                     }
-                }
+                    else if (jobUI.IsPlayPauseEnabled == false && jobUI.PlayPauseIcon == "⏸" && text.StartsWith("⏸") == false)
+                    {
+                        jobUI.Status = "Running";
+                        jobUI.IsPlayPauseEnabled = true;
+                    }
 
-                if (errors.Count > 0)
+                    if (text == "Job stopped.")
+                    {
+                        ActiveJobs.Remove(jobUI);
+                    }
+                    else if (text.StartsWith("Error"))
+                    {
+                        jobUI.Status = "Error";
+                        jobUI.IsPlayPauseEnabled = false;
+                    }
+                    else if (text == "Finished")
+                    {
+                        jobUI.Status = "Finished";
+                        jobUI.Progress = 100;
+                        jobUI.IsPlayPauseEnabled = false;
+                    }
+                });
+
+                Task task = Task.Run(async () =>
                 {
-                    return string.Join("\n", errors);
-                }
+                    string error = await _backupService.PerformJobsAsync(job, BusinessSoft, EncryptedExt, PriorityExt, maxFileSizeBytes, progressObj, t => ((IProgress<string>)textProgress).Report(t));
+                    if (string.IsNullOrEmpty(error) == false) ((IProgress<string>)textProgress).Report(error);
+                    else ((IProgress<string>)textProgress).Report("Finished");
+                });
+
+                tasks.Add(task);
             }
 
-            return null;
+            await Task.WhenAll(tasks);
+            IsButtonsEnabled = true;
+        }
+
+        private void PlayPauseJob(object parameter)
+        {
+            string jobName = parameter as string;
+            if (string.IsNullOrEmpty(jobName)) return;
+
+            foreach (JobProgressInfo job in ActiveJobs)
+            {
+                if (job.Name == jobName)
+                {
+                    if (job.PlayPauseIcon == "⏸")
+                    {
+                        _backupService.PauseJob(jobName);
+                        job.Status = "Paused";
+                        job.PlayPauseIcon = "▶";
+                    }
+                    else
+                    {
+                        _backupService.ResumeJob(jobName);
+                        job.Status = "Running";
+                        job.PlayPauseIcon = "⏸";
+                    }
+                    break;
+                }
+            }
+        }
+
+        private void StopJob(object parameter)
+        {
+            string jobName = parameter as string;
+            if (string.IsNullOrEmpty(jobName) == false) _backupService.StopJob(jobName);
+        }
+
+        private void CloseBanners(object parameter)
+        {
+            IsBannerErrorVisible = false;
+            IsBannerSuccessVisible = false;
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected void OnPropertyChanged(string propertyName)
+        {
+            if (PropertyChanged != null) PropertyChanged.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
 }
