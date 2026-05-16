@@ -131,7 +131,7 @@ namespace EasySave.Service
             }
             catch (Exception ex)
             {
-                return "Error: " + ex.Message;
+                return "__ERR__" + ex.Message;
             }
             finally
             {

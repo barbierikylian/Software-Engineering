@@ -1,11 +1,13 @@
-﻿using System;
+using System;
 using System.Text.Json.Serialization;
 
 namespace EasyLog
 {
     public class LogModel
     {
-        // For Both
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string userName { get; set; }
+
         public string? name { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
@@ -16,10 +18,6 @@ namespace EasyLog
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public long? executionTime { get; set; }
-
-        // For Daily
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        public string userName { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public DateTime? time { get; set; }
@@ -33,7 +31,6 @@ namespace EasyLog
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public long? encryptionTime { get; set; }
 
-        // For Live
         public string? state { get; set; }
 
         public int? totalFilesToCopy { get; set; }

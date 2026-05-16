@@ -43,7 +43,7 @@ namespace EasySave.Service
                         state.time = DateTime.Now;
                         logger.WriteLog(state);
                     }
-                    return "Error: Source directory does not exist.";
+                    return "error_source_missing";
                 }
 
                 _filesCopied = 0;
@@ -320,6 +320,10 @@ namespace EasySave.Service
 
             bool semaphoreAcquired = false;
 
+            Stopwatch fileTimer = Stopwatch.StartNew();
+            long encTime = 0;
+            bool fileCopiedSuccessfully = false;
+
             try
             {
                 if (isBigFile)
@@ -346,9 +350,7 @@ namespace EasySave.Service
                     semaphoreAcquired = true;
                 }
 
-                Stopwatch fileTimer = Stopwatch.StartNew();
-
-                long encTime = SaveService.CopyOrEncrypt(filePath, destPath, encryptedExtensions, (chunkSize) =>
+                encTime = SaveService.CopyOrEncrypt(filePath, destPath, encryptedExtensions, (chunkSize) =>
                 {
                     bool wasPausedBySoftware = false;
                     while (BusinessSoftwareDetector.IsRunning(businessSoftware))
@@ -432,6 +434,7 @@ namespace EasySave.Service
                 }, pauseEvent, cancelToken);
 
                 fileTimer.Stop();
+                fileCopiedSuccessfully = true;
                 _filesCopied++;
 
                 lock (_logLock)
@@ -444,17 +447,6 @@ namespace EasySave.Service
                         updateTimer.Restart();
                     }
                 }
-
-                // Write daily log OUTSIDE _logLock to avoid lock contention between parallel jobs
-                LogModel dailyLog = new LogModel();
-                dailyLog.name = state.name;
-                dailyLog.fileSource = filePath;
-                dailyLog.fileDestination = destPath;
-                dailyLog.fileSize = fileSize;
-                dailyLog.fileTransferTime = fileTimer.Elapsed.TotalMilliseconds;
-                dailyLog.encryptionTime = encTime;
-                dailyLog.time = DateTime.Now;
-                dailyLogger.WriteLog(dailyLog);
             }
             catch (OperationCanceledException)
             {
@@ -465,6 +457,31 @@ namespace EasySave.Service
                 if (semaphoreAcquired)
                 {
                     SaveService.BigFileSemaphore.Release();
+                }
+
+                if (fileCopiedSuccessfully)
+                {
+                    fileTimer.Stop();
+                    try
+                    {
+                        LogModel dailyLog = new LogModel();
+                        dailyLog.name = state.name;
+                        dailyLog.fileSource = filePath;
+                        dailyLog.fileDestination = destPath;
+                        dailyLog.fileSize = fileSize;
+                        dailyLog.fileTransferTime = fileTimer.Elapsed.TotalMilliseconds;
+                        dailyLog.encryptionTime = encTime;
+                        dailyLog.time = DateTime.Now;
+                        dailyLogger.WriteLog(dailyLog);
+                    }
+                    catch (Exception logEx)
+                    {
+                        System.Diagnostics.Debug.WriteLine("[DailyLog] Write failed: " + logEx.Message);
+                        if (currentFileCallback != null)
+                        {
+                            currentFileCallback.Invoke("[DailyLog ERR] " + logEx.Message);
+                        }
+                    }
                 }
             }
         }

@@ -517,12 +517,14 @@ namespace EasySave.ViewModel
                         jobUI.IsRemoveVisible = true;
                         jobUI.IsActionVisible = false;
                     }
-                    else if (text.StartsWith("Error"))
+                    else if (text.StartsWith("__ERR__"))
                     {
+                        jobUI.CurrentFile = text.Substring(7);
                         jobUI.Status = langVM["status_error"];
                         jobUI.IsPlayPauseEnabled = false;
                         jobUI.IsRemoveVisible = true;
                         jobUI.IsActionVisible = false;
+                        return;
                     }
                     else if (text == "Finished")
                     {
@@ -539,10 +541,14 @@ namespace EasySave.ViewModel
                 Task task = Task.Run(async () =>
                 {
                     string error = await _backupService.PerformJobsAsync(job, BusinessSoft, EncryptedExt, PriorityExt, maxFileSizeBytes, progressObj, reportTextAction);
-                    
+
                     if (string.IsNullOrEmpty(error) == false)
                     {
-                        reportTextAction(error);
+                        LanguageViewModel langVMErr = (LanguageViewModel)System.Windows.Application.Current.Dispatcher.Invoke(
+                            () => System.Windows.Application.Current.MainWindow.FindResource("LangVM"));
+                        string translated = langVMErr[error];
+                        string displayed = translated.StartsWith("[") && translated.EndsWith("]") ? error : translated;
+                        reportTextAction("__ERR__" + displayed);
                     }
                     else
                     {
