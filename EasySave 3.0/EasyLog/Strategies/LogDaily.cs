@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Net.Http;
 using System.Text;
@@ -60,12 +60,8 @@ namespace EasyLog
 
         private void WriteLocal(string serializedLog)
         {
-            string ext = "json";
-            string formatterName = _formatter.GetType().Name.ToLower();
-            if (formatterName.Contains("xml"))
-            {
-                ext = "xml";
-            }
+            // Use the formatter's own FileExtension property — more reliable than parsing the class name
+            string ext = _formatter.FileExtension;
 
             string dateString = DateTime.Now.ToString("yyyy-MM-dd");
             string fileName = dateString + "." + ext;
@@ -75,6 +71,12 @@ namespace EasyLog
             {
                 try
                 {
+                    // Re-create the directory if it was deleted since startup
+                    if (Directory.Exists(_logDirectory) == false)
+                    {
+                        Directory.CreateDirectory(_logDirectory);
+                    }
+
                     bool addComma = false;
                     if (ext == "json")
                     {
@@ -88,18 +90,19 @@ namespace EasyLog
                         }
                     }
 
-                    using (StreamWriter writer = new StreamWriter(filePath, true))
+                    using (StreamWriter writer = new StreamWriter(filePath, true, System.Text.Encoding.UTF8))
                     {
                         if (addComma)
                         {
                             writer.WriteLine(",");
                         }
                         writer.WriteLine(serializedLog);
+                        writer.Flush();
                     }
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine("Error writing local log: " + ex.Message);
+                    Debug.WriteLine("[LogDaily] Error writing local log to '" + filePath + "': " + ex.Message);
                 }
             }
         }

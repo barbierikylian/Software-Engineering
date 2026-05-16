@@ -1,4 +1,4 @@
-﻿using EasyLog;
+using EasyLog;
 using EasySave.Model;
 using System;
 using System.Collections.Generic;
@@ -25,6 +25,11 @@ namespace EasySave.Service
             state.progression = 0;
             state.time = DateTime.Now;
 
+            string appDataInit = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            string logDirInit = Path.Combine(appDataInit, "EasySave", "logs");
+            LogDaily dailyLogger = new LogDaily(logDirInit, formatter, serverUrl, userName);
+            dailyLogger.Destination = logDestination;
+
             try
             {
                 string source = SaveService.ConvertToUNC(job.FileSource);
@@ -43,12 +48,6 @@ namespace EasySave.Service
 
                 _filesCopied = 0;
                 _bytesCopied = 0;
-
-                string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-                string logDir = Path.Combine(appData, "EasySave", "logs");
-
-                LogDaily dailyLogger = new LogDaily(logDir, formatter, serverUrl, userName);
-                dailyLogger.Destination = logDestination;
 
                 string[] allFiles = Directory.GetFiles(source, "*", SearchOption.AllDirectories);
                 long totalSize = 0;
@@ -69,7 +68,9 @@ namespace EasySave.Service
                 {
                     lock (_logLock)
                     {
-                        logger.RemoveLog(state.name);
+                        state.state = "Stopped";
+                        state.time = DateTime.Now;
+                        logger.WriteLog(state);
                     }
                     return "Job stopped.";
                 }
@@ -442,18 +443,18 @@ namespace EasySave.Service
                         logger.WriteLog(state);
                         updateTimer.Restart();
                     }
-
-                    LogModel dailyLog = new LogModel();
-                    dailyLog.name = state.name;
-                    dailyLog.fileSource = filePath;
-                    dailyLog.fileDestination = destPath;
-                    dailyLog.fileSize = fileSize;
-                    dailyLog.fileTransferTime = fileTimer.Elapsed.TotalMilliseconds;
-                    dailyLog.encryptionTime = encTime;
-                    dailyLog.time = DateTime.Now;
-
-                    dailyLogger.WriteLog(dailyLog);
                 }
+
+                // Write daily log OUTSIDE _logLock to avoid lock contention between parallel jobs
+                LogModel dailyLog = new LogModel();
+                dailyLog.name = state.name;
+                dailyLog.fileSource = filePath;
+                dailyLog.fileDestination = destPath;
+                dailyLog.fileSize = fileSize;
+                dailyLog.fileTransferTime = fileTimer.Elapsed.TotalMilliseconds;
+                dailyLog.encryptionTime = encTime;
+                dailyLog.time = DateTime.Now;
+                dailyLogger.WriteLog(dailyLog);
             }
             catch (OperationCanceledException)
             {

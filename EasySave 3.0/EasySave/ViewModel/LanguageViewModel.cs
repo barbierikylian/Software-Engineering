@@ -1,4 +1,4 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 using EasySave.Model;
 
 namespace EasySave.ViewModel
@@ -9,12 +9,18 @@ namespace EasySave.ViewModel
 
         public string this[string key]
         {
-            get { return _languageManager.GetString(key); }
+            get
+            {
+                return _languageManager.GetString(key);
+            }
         }
 
         public string CurrentLanguage
         {
-            get { return _languageManager.GetCurrentLanguage(); }
+            get
+            {
+                return _languageManager.GetCurrentLanguage();
+            }
             set
             {
                 if (!string.IsNullOrEmpty(value) && _languageManager.GetCurrentLanguage() != value)
@@ -35,7 +41,10 @@ namespace EasySave.ViewModel
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged(string propertyName)
         {
-            if (PropertyChanged != null) PropertyChanged.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            if (PropertyChanged != null)
+            {
+                PropertyChanged.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            }
         }
     }
 }

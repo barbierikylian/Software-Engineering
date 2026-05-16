@@ -1,4 +1,4 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 
 namespace EasySave.Model
 {
@@ -12,6 +12,8 @@ namespace EasySave.Model
         private string _playPauseToolTip;
         private string _stopToolTip;
         private bool _isPlayPauseEnabled = true;
+        private bool _isRemoveVisible = false;
+        private bool _isActionVisible = true;
 
         public string Name { get { return _name; } set { _name = value; OnPropertyChanged("Name"); } }
         public int Progress { get { return _progress; } set { _progress = value; OnPropertyChanged("Progress"); } }
@@ -21,6 +23,8 @@ namespace EasySave.Model
         public string PlayPauseToolTip { get { return _playPauseToolTip; } set { _playPauseToolTip = value; OnPropertyChanged("PlayPauseToolTip"); } }
         public string StopToolTip { get { return _stopToolTip; } set { _stopToolTip = value; OnPropertyChanged("StopToolTip"); } }
         public bool IsPlayPauseEnabled { get { return _isPlayPauseEnabled; } set { _isPlayPauseEnabled = value; OnPropertyChanged("IsPlayPauseEnabled"); } }
+        public bool IsRemoveVisible { get { return _isRemoveVisible; } set { _isRemoveVisible = value; OnPropertyChanged("IsRemoveVisible"); } }
+        public bool IsActionVisible { get { return _isActionVisible; } set { _isActionVisible = value; OnPropertyChanged("IsActionVisible"); } }
 
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged(string propertyName)

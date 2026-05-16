@@ -1,4 +1,4 @@
-﻿using EasySave.Model;
+using EasySave.Model;
 using EasySave.Service;
 using System;
 using System.Collections.Generic;
@@ -16,72 +16,325 @@ namespace EasySave.ViewModel
         public ObservableCollection<JobProgressInfo> ActiveJobs { get; set; }
 
         private string _inputName;
-        public string InputName { get { return _inputName; } set { _inputName = value; OnPropertyChanged("InputName"); } }
+        public string InputName
+        {
+            get
+            {
+                return _inputName;
+            }
+            set
+            {
+                _inputName = value;
+                OnPropertyChanged("InputName");
+            }
+        }
 
         private string _inputSource;
-        public string InputSource { get { return _inputSource; } set { _inputSource = value; OnPropertyChanged("InputSource"); } }
+        public string InputSource
+        {
+            get
+            {
+                return _inputSource;
+            }
+            set
+            {
+                _inputSource = value;
+                OnPropertyChanged("InputSource");
+            }
+        }
 
         private string _inputTarget;
-        public string InputTarget { get { return _inputTarget; } set { _inputTarget = value; OnPropertyChanged("InputTarget"); } }
+        public string InputTarget
+        {
+            get
+            {
+                return _inputTarget;
+            }
+            set
+            {
+                _inputTarget = value;
+                OnPropertyChanged("InputTarget");
+            }
+        }
 
         private string _inputType = "Full";
-        public string InputType { get { return _inputType; } set { _inputType = value; OnPropertyChanged("InputType"); } }
+        public string InputType
+        {
+            get
+            {
+                return _inputType;
+            }
+            set
+            {
+                _inputType = value;
+                OnPropertyChanged("InputType");
+            }
+        }
 
         private string _businessSoft = "CalculatorApp";
-        public string BusinessSoft { get { return _businessSoft; } set { _businessSoft = value; OnPropertyChanged("BusinessSoft"); } }
+        public string BusinessSoft
+        {
+            get
+            {
+                return _businessSoft;
+            }
+            set
+            {
+                _businessSoft = value;
+                OnPropertyChanged("BusinessSoft");
+            }
+        }
 
         private string _encryptedExt = ".txt;.pdf";
-        public string EncryptedExt { get { return _encryptedExt; } set { _encryptedExt = value; OnPropertyChanged("EncryptedExt"); } }
+        public string EncryptedExt
+        {
+            get
+            {
+                return _encryptedExt;
+            }
+            set
+            {
+                _encryptedExt = value;
+                OnPropertyChanged("EncryptedExt");
+            }
+        }
 
         private string _priorityExt = ".iso;.png";
-        public string PriorityExt { get { return _priorityExt; } set { _priorityExt = value; OnPropertyChanged("PriorityExt"); } }
+        public string PriorityExt
+        {
+            get
+            {
+                return _priorityExt;
+            }
+            set
+            {
+                _priorityExt = value;
+                OnPropertyChanged("PriorityExt");
+            }
+        }
 
         private string _maxFileSize = "50000";
-        public string MaxFileSize { get { return _maxFileSize; } set { _maxFileSize = value; OnPropertyChanged("MaxFileSize"); } }
+        public string MaxFileSize
+        {
+            get
+            {
+                return _maxFileSize;
+            }
+            set
+            {
+                _maxFileSize = value;
+                OnPropertyChanged("MaxFileSize");
+            }
+        }
 
-        private string _serverUrl = "http://localhost:8080/api/logs";
+        private string _serverUrl;
         public string ServerUrl
         {
-            get { return _serverUrl; }
-            set { _serverUrl = value; _backupService.SetServerUrl(value); OnPropertyChanged("ServerUrl"); }
+            get
+            {
+                return _serverUrl;
+            }
+            set
+            {
+                _serverUrl = value;
+                _backupService.SetServerUrl(value);
+                OnPropertyChanged("ServerUrl");
+            }
         }
 
         private string _userName = Environment.UserName;
         public string UserName
         {
-            get { return _userName; }
-            set { _userName = value; _backupService.SetLogUserName(string.IsNullOrWhiteSpace(value) ? Environment.UserName : value); OnPropertyChanged("UserName"); }
+            get
+            {
+                return _userName;
+            }
+            set
+            {
+                _userName = value;
+
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    _backupService.SetLogUserName(Environment.UserName);
+                }
+                else
+                {
+                    _backupService.SetLogUserName(value);
+                }
+
+                OnPropertyChanged("UserName");
+            }
         }
 
         private bool _isJson = true;
-        public bool IsJson { get { return _isJson; } set { _isJson = value; if (value) _backupService.SetLogFormat("json"); OnPropertyChanged("IsJson"); } }
+        public bool IsJson
+        {
+            get
+            {
+                return _isJson;
+            }
+            set
+            {
+                _isJson = value;
+
+                if (value == true)
+                {
+                    _backupService.SetLogFormat("json");
+                }
+
+                OnPropertyChanged("IsJson");
+            }
+        }
 
         private bool _isXml;
-        public bool IsXml { get { return _isXml; } set { _isXml = value; if (value) _backupService.SetLogFormat("xml"); OnPropertyChanged("IsXml"); } }
+        public bool IsXml
+        {
+            get
+            {
+                return _isXml;
+            }
+            set
+            {
+                _isXml = value;
+
+                if (value == true)
+                {
+                    _backupService.SetLogFormat("xml");
+                }
+
+                OnPropertyChanged("IsXml");
+            }
+        }
 
         private bool _isLogLocal;
-        public bool IsLogLocal { get { return _isLogLocal; } set { _isLogLocal = value; if (value) _backupService.SetLogDestination("Local"); OnPropertyChanged("IsLogLocal"); } }
+        public bool IsLogLocal
+        {
+            get
+            {
+                return _isLogLocal;
+            }
+            set
+            {
+                _isLogLocal = value;
+
+                if (value == true)
+                {
+                    _backupService.SetLogDestination("Local");
+                }
+
+                OnPropertyChanged("IsLogLocal");
+            }
+        }
 
         private bool _isLogServer;
-        public bool IsLogServer { get { return _isLogServer; } set { _isLogServer = value; if (value) _backupService.SetLogDestination("Centralized"); OnPropertyChanged("IsLogServer"); } }
+        public bool IsLogServer
+        {
+            get
+            {
+                return _isLogServer;
+            }
+            set
+            {
+                _isLogServer = value;
+
+                if (value == true)
+                {
+                    _backupService.SetLogDestination("Centralized");
+                }
+
+                OnPropertyChanged("IsLogServer");
+            }
+        }
 
         private bool _isLogBoth = true;
-        public bool IsLogBoth { get { return _isLogBoth; } set { _isLogBoth = value; if (value) _backupService.SetLogDestination("Both"); OnPropertyChanged("IsLogBoth"); } }
+        public bool IsLogBoth
+        {
+            get
+            {
+                return _isLogBoth;
+            }
+            set
+            {
+                _isLogBoth = value;
+
+                if (value == true)
+                {
+                    _backupService.SetLogDestination("Both");
+                }
+
+                OnPropertyChanged("IsLogBoth");
+            }
+        }
 
         private bool _isButtonsEnabled = true;
-        public bool IsButtonsEnabled { get { return _isButtonsEnabled; } set { _isButtonsEnabled = value; OnPropertyChanged("IsButtonsEnabled"); } }
+        public bool IsButtonsEnabled
+        {
+            get
+            {
+                return _isButtonsEnabled;
+            }
+            set
+            {
+                _isButtonsEnabled = value;
+                OnPropertyChanged("IsButtonsEnabled");
+            }
+        }
 
         private string _bannerErrorText;
-        public string BannerErrorText { get { return _bannerErrorText; } set { _bannerErrorText = value; OnPropertyChanged("BannerErrorText"); } }
+        public string BannerErrorText
+        {
+            get
+            {
+                return _bannerErrorText;
+            }
+            set
+            {
+                _bannerErrorText = value;
+                OnPropertyChanged("BannerErrorText");
+            }
+        }
 
         private bool _isBannerErrorVisible;
-        public bool IsBannerErrorVisible { get { return _isBannerErrorVisible; } set { _isBannerErrorVisible = value; OnPropertyChanged("IsBannerErrorVisible"); } }
+        public bool IsBannerErrorVisible
+        {
+            get
+            {
+                return _isBannerErrorVisible;
+            }
+            set
+            {
+                _isBannerErrorVisible = value;
+                OnPropertyChanged("IsBannerErrorVisible");
+            }
+        }
 
         private string _bannerSuccessText;
-        public string BannerSuccessText { get { return _bannerSuccessText; } set { _bannerSuccessText = value; OnPropertyChanged("BannerSuccessText"); } }
+        public string BannerSuccessText
+        {
+            get
+            {
+                return _bannerSuccessText;
+            }
+            set
+            {
+                _bannerSuccessText = value;
+                OnPropertyChanged("BannerSuccessText");
+            }
+        }
 
         private bool _isBannerSuccessVisible;
-        public bool IsBannerSuccessVisible { get { return _isBannerSuccessVisible; } set { _isBannerSuccessVisible = value; OnPropertyChanged("IsBannerSuccessVisible"); } }
+        public bool IsBannerSuccessVisible
+        {
+            get
+            {
+                return _isBannerSuccessVisible;
+            }
+            set
+            {
+                _isBannerSuccessVisible = value;
+                OnPropertyChanged("IsBannerSuccessVisible");
+            }
+        }
 
         public RelayCommand AddJobCommand { get; set; }
         public RelayCommand DeleteJobCommand { get; set; }
@@ -90,6 +343,9 @@ namespace EasySave.ViewModel
         public RelayCommand PlayPauseCommand { get; set; }
         public RelayCommand StopCommand { get; set; }
         public RelayCommand CloseBannersCommand { get; set; }
+        public RelayCommand OpenStateLogsCommand { get; set; }
+        public RelayCommand OpenDailyLogsCommand { get; set; }
+        public RelayCommand RemoveActiveJobCommand { get; set; }
 
         public SaveViewModel()
         {
@@ -104,10 +360,13 @@ namespace EasySave.ViewModel
             PlayPauseCommand = new RelayCommand(PlayPauseJob);
             StopCommand = new RelayCommand(StopJob);
             CloseBannersCommand = new RelayCommand(CloseBanners);
+            OpenStateLogsCommand = new RelayCommand(OpenStateLogs);
+            OpenDailyLogsCommand = new RelayCommand(OpenDailyLogs);
+            RemoveActiveJobCommand = new RelayCommand(RemoveActiveJob);
 
             RefreshGrid();
             _backupService.SetLogUserName(Environment.UserName);
-            _backupService.SetServerUrl(ServerUrl);
+            _backupService.SetServerUrl("http://localhost:8080/api/logs");
         }
 
         private void RefreshGrid()
@@ -126,28 +385,40 @@ namespace EasySave.ViewModel
 
             if (string.IsNullOrWhiteSpace(InputName) || string.IsNullOrWhiteSpace(InputSource) || string.IsNullOrWhiteSpace(InputTarget))
             {
-                BannerErrorText = "Required fields are missing.";
+                LanguageViewModel langVM = (LanguageViewModel)System.Windows.Application.Current.MainWindow.FindResource("LangVM");
+                BannerErrorText = langVM["err_fields_missing"];
                 IsBannerErrorVisible = true;
                 return;
             }
 
             if (_backupService.CanCreateJob() == false)
             {
-                BannerErrorText = "Maximum number of jobs reached.";
+                LanguageViewModel langVM = (LanguageViewModel)System.Windows.Application.Current.MainWindow.FindResource("LangVM");
+                BannerErrorText = langVM["err_max_jobs"];
                 IsBannerErrorVisible = true;
                 return;
             }
 
             Backup newJob = new Backup { Name = InputName.Trim(), FileSource = InputSource.Trim(), FileDestination = InputTarget.Trim(), Type = InputType };
-            _backupService.CreateJob(newJob);
+            
+            try
+            {
+                _backupService.CreateJob(newJob);
 
-            RefreshGrid();
-            BannerSuccessText = "Job created successfully.";
-            IsBannerSuccessVisible = true;
+                RefreshGrid();
+                LanguageViewModel langVM = (LanguageViewModel)System.Windows.Application.Current.MainWindow.FindResource("LangVM");
+                BannerSuccessText = langVM["succ_job_created"];
+                IsBannerSuccessVisible = true;
 
-            InputName = string.Empty;
-            InputSource = string.Empty;
-            InputTarget = string.Empty;
+                InputName = string.Empty;
+                InputSource = string.Empty;
+                InputTarget = string.Empty;
+            }
+            catch (Exception ex)
+            {
+                BannerErrorText = ex.Message;
+                IsBannerErrorVisible = true;
+            }
         }
 
         private void DeleteJob(object parameter)
@@ -158,14 +429,23 @@ namespace EasySave.ViewModel
                 if (item.IsSelected) toDelete.Add(item);
             }
 
-            foreach (SelectableBackup item in toDelete)
+            try
             {
-                _backupService.DeleteJob(item.Job);
-            }
+                foreach (SelectableBackup item in toDelete)
+                {
+                    _backupService.DeleteJob(item.Job);
+                }
 
-            RefreshGrid();
-            BannerSuccessText = "Job(s) deleted successfully.";
-            IsBannerSuccessVisible = true;
+                RefreshGrid();
+                LanguageViewModel langVM = (LanguageViewModel)System.Windows.Application.Current.MainWindow.FindResource("LangVM");
+                BannerSuccessText = langVM["succ_job_deleted"];
+                IsBannerSuccessVisible = true;
+            }
+            catch (Exception ex)
+            {
+                BannerErrorText = ex.Message;
+                IsBannerErrorVisible = true;
+            }
         }
 
         private void ExecuteSelected(object parameter)
@@ -200,53 +480,74 @@ namespace EasySave.ViewModel
             {
                 JobProgressInfo jobUI = new JobProgressInfo();
                 jobUI.Name = job.Name;
-                jobUI.Status = "Running";
+                LanguageViewModel langVM = (LanguageViewModel)System.Windows.Application.Current.MainWindow.FindResource("LangVM");
+                jobUI.Status = langVM["status_running"];
                 jobUI.Progress = 0;
                 jobUI.CurrentFile = "Starting...";
                 jobUI.PlayPauseIcon = "⏸";
                 jobUI.IsPlayPauseEnabled = true;
+                jobUI.IsRemoveVisible = false;
+                jobUI.IsActionVisible = true;
 
                 ActiveJobs.Add(jobUI);
 
-                Progress<int> progressObj = new Progress<int>(p => jobUI.Progress = p);
-                Progress<string> textProgress = new Progress<string>(text =>
+                IProgress<int> progressObj = new Progress<int>(p => jobUI.Progress = p);
+                IProgress<string> textProgress = new Progress<string>(text =>
                 {
                     if (ActiveJobs.Contains(jobUI) == false) return;
                     jobUI.CurrentFile = text;
 
+                    LanguageViewModel langVM = (LanguageViewModel)System.Windows.Application.Current.MainWindow.FindResource("LangVM");
+                    
                     if (text.StartsWith("⏸"))
                     {
-                        jobUI.Status = "Blocked";
+                        jobUI.Status = langVM["status_blocked"];
                         jobUI.IsPlayPauseEnabled = false;
                     }
                     else if (jobUI.IsPlayPauseEnabled == false && jobUI.PlayPauseIcon == "⏸" && text.StartsWith("⏸") == false)
                     {
-                        jobUI.Status = "Running";
+                        jobUI.Status = langVM["status_running"];
                         jobUI.IsPlayPauseEnabled = true;
                     }
 
                     if (text == "Job stopped.")
                     {
-                        ActiveJobs.Remove(jobUI);
+                        jobUI.Status = langVM["status_stopped"];
+                        jobUI.IsPlayPauseEnabled = false;
+                        jobUI.IsRemoveVisible = true;
+                        jobUI.IsActionVisible = false;
                     }
                     else if (text.StartsWith("Error"))
                     {
-                        jobUI.Status = "Error";
+                        jobUI.Status = langVM["status_error"];
                         jobUI.IsPlayPauseEnabled = false;
+                        jobUI.IsRemoveVisible = true;
+                        jobUI.IsActionVisible = false;
                     }
                     else if (text == "Finished")
                     {
-                        jobUI.Status = "Finished";
+                        jobUI.Status = langVM["status_finished"];
                         jobUI.Progress = 100;
                         jobUI.IsPlayPauseEnabled = false;
+                        jobUI.IsRemoveVisible = true;
+                        jobUI.IsActionVisible = false;
                     }
                 });
 
+                Action<string> reportTextAction = new Action<string>(textProgress.Report);
+
                 Task task = Task.Run(async () =>
                 {
-                    string error = await _backupService.PerformJobsAsync(job, BusinessSoft, EncryptedExt, PriorityExt, maxFileSizeBytes, progressObj, t => ((IProgress<string>)textProgress).Report(t));
-                    if (string.IsNullOrEmpty(error) == false) ((IProgress<string>)textProgress).Report(error);
-                    else ((IProgress<string>)textProgress).Report("Finished");
+                    string error = await _backupService.PerformJobsAsync(job, BusinessSoft, EncryptedExt, PriorityExt, maxFileSizeBytes, progressObj, reportTextAction);
+                    
+                    if (string.IsNullOrEmpty(error) == false)
+                    {
+                        reportTextAction(error);
+                    }
+                    else
+                    {
+                        reportTextAction("Finished");
+                    }
                 });
 
                 tasks.Add(task);
@@ -294,10 +595,47 @@ namespace EasySave.ViewModel
             IsBannerSuccessVisible = false;
         }
 
+        private void RemoveActiveJob(object parameter)
+        {
+            string jobName = parameter as string;
+            if (!string.IsNullOrEmpty(jobName))
+            {
+                JobProgressInfo jobUI = ActiveJobs.FirstOrDefault(j => j.Name == jobName);
+                if (jobUI != null)
+                {
+                    ActiveJobs.Remove(jobUI);
+                    _backupService.RemoveFromStateLog(jobName);
+                }
+            }
+        }
+
+        private void OpenStateLogs(object parameter)
+        {
+            string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            string dataDir = System.IO.Path.Combine(appData, "EasySave", "data");
+            if (System.IO.Directory.Exists(dataDir))
+            {
+                System.Diagnostics.Process.Start("explorer.exe", dataDir);
+            }
+        }
+
+        private void OpenDailyLogs(object parameter)
+        {
+            string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            string logDir = System.IO.Path.Combine(appData, "EasySave", "logs");
+            if (System.IO.Directory.Exists(logDir))
+            {
+                System.Diagnostics.Process.Start("explorer.exe", logDir);
+            }
+        }
+
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged(string propertyName)
         {
-            if (PropertyChanged != null) PropertyChanged.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            if (PropertyChanged != null)
+            {
+                PropertyChanged.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            }
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿using EasyLog;
+using EasyLog;
 using EasySave.Model;
 using EasySave.Service;
 using System;
@@ -23,7 +23,7 @@ namespace EasySave.Service
         private string _currentLogFormat = "json";
 
         private string _logDestination = "Both";
-        private string _serverUrl = "http://localhost:8080/api/logs";
+        private string _serverUrl = "";
         private string _logUserName = Environment.UserName;
 
         public ConcurrentDictionary<string, CancellationTokenSource> CancelTokens { get; } = new ConcurrentDictionary<string, CancellationTokenSource>();
@@ -206,8 +206,9 @@ namespace EasySave.Service
                 string jsonString = JsonSerializer.Serialize(Jobs, options);
                 File.WriteAllText(JobsFilePath, jsonString);
             }
-            catch
+            catch (Exception ex)
             {
+                throw new Exception("Failed to write jobs to disk: " + ex.Message);
             }
         }
 
@@ -232,10 +233,27 @@ namespace EasySave.Service
                     Jobs = new List<Backup>();
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                Debug.WriteLine("Error loading jobs: " + ex.Message);
                 Jobs = new List<Backup>();
             }
+        }
+
+        public void RemoveFromStateLog(string jobName)
+        {
+            IFormatter formatter;
+            if (_currentLogFormat == "xml")
+            {
+                formatter = new XmlFormatter();
+            }
+            else
+            {
+                formatter = new JsonFormatter();
+            }
+
+            ILogStrategy logger = new LogLive(StateFilePath, formatter);
+            logger.RemoveLog(jobName);
         }
     }
 }
