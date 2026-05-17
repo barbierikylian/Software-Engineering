@@ -11,9 +11,10 @@ namespace EasySave.Services
         private int _filesCopied = 0;
         private long _bytesCopied = 0;
 
-        public void Save(Backup job, LogModel state, ILogStrategy liveLogger)
+        public void Save(Backup job, LogModel state, ILogStrategy liveLogger, IFormatter formatter)
         {
             try
+
             {
                 string source = SaveServices.ConvertToUNC(job.FileSource);
                 string target = SaveServices.ConvertToUNC(job.FileDestination);
@@ -42,23 +43,11 @@ namespace EasySave.Services
                 string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
                 string logDir = Path.Combine(appData, "EasySave", "logs");
 
-                ILogStrategy dailyLogger = new LogDaily(logDir);
+                ILogStrategy dailyLogger = new LogDaily(logDir, formatter);
                 dailyLogger.WriteLog(dailyLog);
-
-                Console.Title = "EasySave - Finished";
-                Console.WriteLine();
-                Console.ForegroundColor = ConsoleColor.White;
-                Console.WriteLine("--------------------------------------------------");
-                Console.WriteLine($" Job: {job.Name}");
-                Console.WriteLine($" Status: Success");
-                Console.WriteLine($" Files: {_filesCopied}");
-                Console.WriteLine($" Time: {timer.ElapsedMilliseconds} ms");
-                Console.WriteLine("--------------------------------------------------");
-                Console.ResetColor();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"Error : {ex.Message}");
             }
         }
 
@@ -72,7 +61,6 @@ namespace EasySave.Services
 
                 if (ShouldCopy(filePath, destPath))
                 {
-                    bool isNewFile = !File.Exists(destPath);
                     long fileSize = new FileInfo(filePath).Length;
 
                     state.currentSourceFile = filePath;
@@ -90,24 +78,6 @@ namespace EasySave.Services
                         state.progression = (int)((_bytesCopied * 100) / state.totalFilesSize);
 
                     logger.WriteLog(state);
-
-                    Console.Title = $"[{state.progression}%] EasySave - Copying: {state.name}";
-
-                    string fileName = Path.GetFileName(filePath);
-                    if (isNewFile)
-                    {
-                        Console.ForegroundColor = ConsoleColor.Green;
-                        Console.Write("[+] ");
-                        Console.ResetColor();
-                        Console.WriteLine($"Added   : {fileName} ({state.progression}%)");
-                    }
-                    else
-                    {
-                        Console.ForegroundColor = ConsoleColor.Cyan;
-                        Console.Write("[~] ");
-                        Console.ResetColor();
-                        Console.WriteLine($"Updated : {fileName} ({state.progression}%)");
-                    }
                 }
             }
 

@@ -38,5 +38,8 @@
   "error_invalid_option": "Invalid option.",
   "error_invalid_input": "Invalid input.",
   "error_invalid_index": "Invalid job index",
-  "error_no_valid_selection": "No valid jobs selected."
+  "error_no_valid_selection": "No valid jobs selected.",
+  "prompt_format": "Change the log format :",
+  "menu_log_format": "Setting logs",
+  "logformat_title": "Title of log format"
 }

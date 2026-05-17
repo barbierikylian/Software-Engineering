@@ -39,3 +39,41 @@ All application data is stored in `%AppData%/EasySave/` for persistence:
 - Real-time Tracking: Live progress (percentage and file count) in console and window title.
 - Git-style UI: Clean, color-coded CLI output.
 - Multi-language: Support for English and French.
+
+# EasySave V2
+
+Graphical and efficient backup management tool. This is the V2 release featuring a complete WPF Graphical User Interface.
+
+## How to Run
+
+### 1. From Visual Studio
+* Open the solution file `EasySave.slnx`.
+* **Important:** Right-click the **EasySaveGUI** project and select **"Set as Startup Project"**. (Do not run the old console project).
+* Press `F5` to build and run the graphical application.
+
+### 2. From Executable (.exe)
+* Navigate to the GUI build folder: `EasySaveGUI/bin/Debug/net8.0-windows/` (path may vary depending on your build configuration).
+* Run **`EasySaveGUI.exe`** directly.
+
+## CLI Arguments (Headless Execution)
+You can bypass the graphical interface and execute jobs directly in the background by passing arguments to the executable:
+* Execute specific jobs: `EasySaveGUI.exe 1;3` (Runs job 1 and 3)
+* Execute a range of jobs: `EasySaveGUI.exe 1-3` (Runs jobs 1, 2, and 3)
+
+## Important File Locations
+All application data is stored in `%AppData%/EasySave/` for persistence:
+* **Configuration & State (`/data` folder)**
+  * `Listjobs.json`: Stores the configuration of your backup jobs.
+  * `state.json` / `state.xml`: Real-time status and progress of the active backup task.
+* **History (`/logs` folder)**
+  * `YYYY-MM-DD.json` / `YYYY-MM-DD.xml`: Daily logs containing detailed transfer and encryption metrics.
+
+## Features (V2)
+* **Graphical Interface (GUI):** Clean, intuitive, and responsive WPF interface.
+* **File Encryption (CryptoSoft):** Seamlessly encrypt specific user-defined file extensions (e.g., `.txt;.pdf`) during the backup process.
+* **Business Software Detection:** Automatically blocks or pauses backups if predefined business applications are running.
+* **Log Formats:** Switch dynamically between JSON and XML for daily logs and real-time state tracking.
+* **Job Management:** Create, list, delete, and execute jobs (individually or simultaneously).
+* **Strategies:** Support for both Complete and Differential backups.
+* **Real-time Tracking:** Live progress bar and current file operation tracking.
+* **Multi-language:** Real-time localization support for English and French.

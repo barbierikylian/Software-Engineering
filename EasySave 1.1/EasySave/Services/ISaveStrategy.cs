@@ -6,6 +6,6 @@ namespace EasySave.Services
 {
     public interface ISaveStrategy
     {
-        void Save(Backup job, LogModel state, ILogStrategy logger);
+        void Save(Backup job, LogModel state, ILogStrategy liveLogger, IFormatter formatter);
     }
 }
