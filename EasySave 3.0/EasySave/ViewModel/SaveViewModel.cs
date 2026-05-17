@@ -542,7 +542,11 @@ namespace EasySave.ViewModel
                 {
                     string error = await _backupService.PerformJobsAsync(job, BusinessSoft, EncryptedExt, PriorityExt, maxFileSizeBytes, progressObj, reportTextAction);
 
-                    if (string.IsNullOrEmpty(error) == false)
+                    if (error == "Job stopped.")
+                    {
+                        reportTextAction("Job stopped.");
+                    }
+                    else if (string.IsNullOrEmpty(error) == false)
                     {
                         LanguageViewModel langVMErr = (LanguageViewModel)System.Windows.Application.Current.Dispatcher.Invoke(
                             () => System.Windows.Application.Current.MainWindow.FindResource("LangVM"));
