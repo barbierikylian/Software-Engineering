@@ -77,3 +77,146 @@ All application data is stored in `%AppData%/EasySave/` for persistence:
 * **Strategies:** Support for both Complete and Differential backups.
 * **Real-time Tracking:** Live progress bar and current file operation tracking.
 * **Multi-language:** Real-time localization support for English and French.
+
+# EasySave
+
+## V1 — Console Backup Tool
+
+Simple and efficient console backup tool. This is the V1 release for Deliverable 1.
+
+### How to Run
+
+**From Visual Studio**
+1. Open `EasySave.slnx`.
+2. Right-click the **EasySave** project → *Set as Startup Project*.
+3. Press `F5`.
+
+**From Executable**
+Navigate to `EasySave/bin/Debug/net8.0/` and run `EasySave.exe`.
+
+### CLI Arguments
+
+```
+EasySave.exe 1;3     # Run jobs 1 and 3
+```
+
+### Important File Locations
+
+All data is stored in `%AppData%/EasySave/`:
+
+| File | Description |
+|---|---|
+| `data/Listjobs.json` | Backup job configurations |
+| `data/state.json` | Real-time backup progress |
+| `logs/YYYY-MM-DD.json` | Daily transfer logs |
+
+### Features
+
+- Job Management: create, list, delete up to 5 jobs
+- Complete & Differential backup strategies
+- Real-time progress in console & window title
+- Multi-language: English / French
+
+---
+
+## V2 — WPF Graphical Interface
+
+Graphical and efficient backup management tool. This is the V2 release featuring a complete WPF GUI.
+
+### How to Run
+
+**From Visual Studio**
+1. Open `EasySave.slnx`.
+2. Right-click **EasySaveGUI** → *Set as Startup Project*.
+3. Press `F5`.
+
+**From Executable**
+Navigate to `EasySaveGUI/bin/Debug/net8.0-windows/` and run `EasySaveGUI.exe`.
+
+### CLI Arguments (Headless)
+
+```
+EasySaveGUI.exe 1;3    # Run jobs 1 and 3
+EasySaveGUI.exe 1-3    # Run jobs 1, 2, and 3
+```
+
+### Important File Locations
+
+All data is stored in `%AppData%/EasySave/`:
+
+| File | Description |
+|---|---|
+| `data/Listjobs.json` | Backup job configurations |
+| `data/state.json` / `state.xml` | Real-time backup progress |
+| `logs/YYYY-MM-DD.json` / `.xml` | Daily transfer & encryption logs |
+
+### Features
+
+- WPF GUI: clean, responsive interface
+- File Encryption via CryptoSoft (e.g. `.txt;.pdf`)
+- Business Software Detection: pauses backup if a blocked app is running
+- Log format: JSON or XML (switchable at runtime)
+- Simultaneous job execution
+- Real-time progress bar & current file tracking
+- Multi-language: English / French (real-time switch)
+
+---
+
+## V3 — Parallel Processing & Centralized Logging
+
+Advanced backup tool with parallel job execution and a centralized remote log server. This is the V3 release for Deliverable 3.
+
+### How to Run
+
+**From Visual Studio**
+1. Open `EasySave.slnx`.
+2. Right-click **EasySave** → *Set as Startup Project*.
+3. Press `F5`.
+
+**From Executable**
+Navigate to `EasySave/bin/Debug/net8.0-windows/` and run `EasySave.exe`.
+
+### Log Server (Docker)
+
+The V3 log server centralizes logs from all running instances of EasySave.
+
+```bash
+# Build and start the server
+cd EasySaveLogServer
+docker build -t easysave-log-server .
+docker run -d -p 8080:8080 easysave-log-server
+```
+
+The server exposes a REST endpoint at `http://localhost:8080/api/logs` and writes daily log files to the `/app/logs` folder inside the container.
+
+> To persist logs outside the container, mount a volume:
+> ```bash
+> docker run -d -p 8080:8080 -v "$PWD/logs:/app/logs" easysave-log-server
+> ```
+
+### Important File Locations
+
+Local data is still stored in `%AppData%/EasySave/`:
+
+| File | Description |
+|---|---|
+| `data/Listjobs.json` | Backup job configurations |
+| `data/state.json` / `state.xml` | Real-time backup progress |
+| `logs/YYYY-MM-DD.json` / `.xml` | Local daily logs |
+
+Centralized logs (written by the Docker server):
+
+| File | Description |
+|---|---|
+| `centralized_log_YYYY-MM-DD.json` | Aggregated JSON logs from all clients |
+| `centralized_log_YYYY-MM-DD.xml` | Aggregated XML logs from all clients |
+
+### Features
+
+All V2 features, plus:
+
+- **Parallel Execution**: all jobs run concurrently across multiple threads
+- **Priority Files**: files matching user-defined extensions are transferred first
+- **Pause / Resume / Stop**: fine-grained control over each running job
+- **Centralized Log Server**: remote ASP.NET server (Dockerized) collects logs from all EasySave instances in real time
+- **Multi-instance Support**: multiple EasySave clients can run simultaneously and log to the same server
